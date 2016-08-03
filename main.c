@@ -39,6 +39,7 @@
 /* FreeRTOS includes. */
 #include "include/FreeRTOS.h"
 #include "include/task.h"
+#include "include/semphr.h"
 
 /* Stellaris library includes. */
 #include "inc\hw_types.h"
@@ -46,6 +47,8 @@
 //#include "inc\hw_sysctl.h"
 #include "driverlib/sysctl.h"
 #include "rit128x96x4.h"
+#include "driverlib/uart.h"
+
 
 /* User made library includes */
 #include "init.h"
@@ -66,26 +69,67 @@ defined const and off the stack to ensure they remain valid when the tasks are
 executing. */
 const char *pcTextForTask1 = "Task 1 is running\n";
 const char *pcTextForTask2 = "Task 2 is running\n";
+xSemaphoreHandle  xBinarySemaphore;
+
+void store_char(long UART_character){
+	if (UART_character == '$'){
+		UART_char_data_old[0] = '\0';
+		strcpy(UART_char_data_old, UART_char_data);
+		index = 0;
+		read_data = 0;
+		UART_char_data[index] = UART_character;
+		index++;
+	}
+	else{
+		UART_char_data[index] = UART_character;
+		index++;
+	}
+}
+
+void UARTIntHandler(void) {
+	portBASE_TYPE xHigherprioritytaskWoken = pdFALSE;
+	xSemaphoreGiveFromISR(xBinarySemaphore, &xHigherprioritytaskWoken);
+
+
+    unsigned long ulStatus;
+    long UART_character = 0;
+    // Get the interrupt status.
+    //
+    ulStatus = UARTIntStatus(UART0_BASE, true);
+    // Clear the asserted interrupts.
+    //
+    UARTIntClear(UART0_BASE, ulStatus);
+    // Loop while there are characters in the receive FIFO.
+    //
+    while(UARTCharsAvail(UART0_BASE)) {
+        // Read the next character from the UART and write it back to the UART.
+        //
+    	//UARTCharPutNonBlocking(UART0_BASE, UARTCharGetNonBlocking(UART0_BASE));
+        UART_character = UARTCharGetNonBlocking(UART0_BASE);
+        StoreQuew(UART_character);
+    }
+    portEND_SWITCHING_ISR(xHigherprioritytaskWoken);
+}
 
 /*-----------------------------------------------------------*/
 
-int main( void )
-{
+int main( void ) {
+	reset_peripheral();
 	/* Set the clocking to run from the PLL at 50 MHz.  Assumes 8MHz XTAL,
 	whereas some older eval boards used 6MHz. */
 	SysCtlClockSet( SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ );
 
-	//void reset_peripheral(void);
 
-	xCountingSemaphore1 = xSemaphoreCreateCounting(10,0); // First semaphore
+	initPin();
+	vSemaphoreCreateBinary(xBinarySemaphore);
 
 	/* Create one of the two tasks. */
-	xTaskCreate( vReadGPS, "Task 1", 240, NULL, 1, NULL );
+	xTaskCreate( vReadGPS, "GPS Read Task", 240, NULL, 2, NULL );
 
 	/* Create the other task in exactly the same way.  Note this time that we
 	are creating the SAME task, but passing in a different parameter.  We are
 	creating two instances of a single task implementation. */
-	xTaskCreate( vDisplayTask, "Task 2", 300, NULL, 1, NULL );
+	xTaskCreate( vDisplayTask, "Display Task", 300, NULL, 1, NULL );
 
 	/* Start the scheduler so our tasks start executing. */
 	vTaskStartScheduler();	
@@ -99,9 +143,11 @@ int main( void )
 
 void vReadGPS( void *pvParameters ){
 
+	xSemaphoreTake(xBinarySemaphore, 0)
 	for( ;; ) {
+		xSemaphoreTake(xBinarySemaphore, portMAX_DELAY);
 
-
+		readQue();
 	}
 }
 

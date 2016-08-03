@@ -15,10 +15,13 @@ main.obj: ../include/../portable/portmacro.h
 main.obj: ../include/mpu_wrappers.h
 main.obj: ../include/task.h
 main.obj: ../include/list.h
+main.obj: ../include/semphr.h
+main.obj: ../include/queue.h
 main.obj: C:/ti/StellarisWare/inc/hw_types.h
 main.obj: C:/ti/StellarisWare/inc/hw_memmap.h
 main.obj: C:/ti/StellarisWare/driverlib/sysctl.h
 main.obj: ../rit128x96x4.h
+main.obj: C:/ti/StellarisWare/driverlib/uart.h
 main.obj: ../init.h
 main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdint.h
 main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdbool.h
@@ -39,10 +42,13 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stddef.h:
 ../include/mpu_wrappers.h: 
 ../include/task.h: 
 ../include/list.h: 
+../include/semphr.h: 
+../include/queue.h: 
 C:/ti/StellarisWare/inc/hw_types.h: 
 C:/ti/StellarisWare/inc/hw_memmap.h: 
 C:/ti/StellarisWare/driverlib/sysctl.h: 
 ../rit128x96x4.h: 
+C:/ti/StellarisWare/driverlib/uart.h: 
 ../init.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdint.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdbool.h: 
