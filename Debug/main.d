@@ -22,9 +22,17 @@ main.obj: C:/ti/StellarisWare/inc/hw_memmap.h
 main.obj: C:/ti/StellarisWare/driverlib/sysctl.h
 main.obj: ../rit128x96x4.h
 main.obj: C:/ti/StellarisWare/driverlib/uart.h
-main.obj: ../init.h
+main.obj: C:/ti/StellarisWare/driverlib/interrupt.h
+main.obj: C:/ti/StellarisWare/driverlib/gpio.h
+main.obj: C:/ti/StellarisWare/driverlib/pin_map.h
+main.obj: C:/ti/StellarisWare/driverlib/timer.h
 main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdint.h
 main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdbool.h
+main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/string.h
+main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/math.h
+main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/_defs.h
+main.obj: C:/ti/StellarisWare/inc/hw_uart.h
+main.obj: ../init.h
 main.obj: ../demo_code/basic_io.h
 
 ../main.c: 
@@ -49,7 +57,15 @@ C:/ti/StellarisWare/inc/hw_memmap.h:
 C:/ti/StellarisWare/driverlib/sysctl.h: 
 ../rit128x96x4.h: 
 C:/ti/StellarisWare/driverlib/uart.h: 
-../init.h: 
+C:/ti/StellarisWare/driverlib/interrupt.h: 
+C:/ti/StellarisWare/driverlib/gpio.h: 
+C:/ti/StellarisWare/driverlib/pin_map.h: 
+C:/ti/StellarisWare/driverlib/timer.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdint.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdbool.h: 
+C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/string.h: 
+C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/math.h: 
+C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/_defs.h: 
+C:/ti/StellarisWare/inc/hw_uart.h: 
+../init.h: 
 ../demo_code/basic_io.h: 

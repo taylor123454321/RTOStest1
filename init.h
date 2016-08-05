@@ -102,6 +102,18 @@ typedef struct {
 } circBuf_t;
 
 
+typedef struct {
+	long UART_character;
+} UART_s;
+
+
+typedef struct {
+	int index;
+	char UART_char_data[90];
+	char UART_char_data_old[90];
+
+} GPS_DATA_s;
+
 
 // *******************************************************
 // initCircBuf: Initialise the circBuf instance. Reset both indices to

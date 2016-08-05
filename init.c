@@ -15,7 +15,7 @@
 //#include "driverlib/pwm.h"
 #include "driverlib/gpio.h"
 #include "driverlib/sysctl.h"
-#include "driverlib/systick.h"
+//#include "driverlib/systick.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/uart.h"
 #include "driverlib/timer.h"
@@ -50,15 +50,16 @@ void reset_peripheral(void){
 }
 
 void initClock (void) {
-  //
-  // Set the clock rate @
-  SysCtlClockSet (SYSCTL_SYSDIV_1 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ);
-  //
-  // Set up the period for the SysTick timer to get the maximum span.
-  SysTickPeriodSet (MAX_24BIT_VAL);
-  //
-  // Enable SysTick device (no interrupt)
-  SysTickEnable ();
+	//
+	// Set the clock rate @
+	//SysCtlClockSet (SYSCTL_SYSDIV_1 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ);
+  	SysCtlClockSet( SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ );
+  	//
+  	// Set up the period for the SysTick timer to get the maximum span.
+  	//SysTickPeriodSet (MAX_24BIT_VAL);
+  	//
+  	// Enable SysTick device (no interrupt)
+  	//SysTickEnable ();
 }
 
 void initGPIO(void){
@@ -73,7 +74,7 @@ void initGPIO(void){
 void initPin (void) {
     //
     // Register the handler for Port F into the vector table
-    GPIOPortIntRegister (GPIO_PORTF_BASE, PinChangeIntHandler);
+    //GPIOPortIntRegister (GPIO_PORTF_BASE, PinChangeIntHandler);
     //
     // Enable and configure the port and pin used:  input on PF5: Pin 27
     SysCtlPeripheralEnable (SYSCTL_PERIPH_GPIOF);
@@ -275,6 +276,5 @@ void init_acc_time(acc_time *data){
 	data->acc80 = 0;
 	data->acc100 = 0;
 }
-
 
 

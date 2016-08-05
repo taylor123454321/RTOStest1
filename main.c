@@ -48,7 +48,15 @@
 #include "driverlib/sysctl.h"
 #include "rit128x96x4.h"
 #include "driverlib/uart.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/gpio.h"
+#include "driverlib/timer.h"
 
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+#include <math.h>
+#include "inc/hw_uart.h"
 
 /* User made library includes */
 #include "init.h"
@@ -62,6 +70,9 @@
 /* The task function. */
 void vReadGPS( void *pvParameters );
 void vDisplayTask( void *pvParameters );
+void vFakeGPS( void *pvParameters );
+
+
 
 
 /* Define the strings that will be passed in as the task parameters.  These are
@@ -69,9 +80,11 @@ defined const and off the stack to ensure they remain valid when the tasks are
 executing. */
 const char *pcTextForTask1 = "Task 1 is running\n";
 const char *pcTextForTask2 = "Task 2 is running\n";
+//char UART_char_data[120];
 xSemaphoreHandle  xBinarySemaphore;
+xQueueHandle xQueueGPS;
 
-void store_char(long UART_character){
+/*void store_char(long UART_character){
 	if (UART_character == '$'){
 		UART_char_data_old[0] = '\0';
 		strcpy(UART_char_data_old, UART_char_data);
@@ -84,15 +97,12 @@ void store_char(long UART_character){
 		UART_char_data[index] = UART_character;
 		index++;
 	}
-}
+}*/
 
 void UARTIntHandler(void) {
 	portBASE_TYPE xHigherprioritytaskWoken = pdFALSE;
 	xSemaphoreGiveFromISR(xBinarySemaphore, &xHigherprioritytaskWoken);
-
-
     unsigned long ulStatus;
-    long UART_character = 0;
     // Get the interrupt status.
     //
     ulStatus = UARTIntStatus(UART0_BASE, true);
@@ -101,14 +111,33 @@ void UARTIntHandler(void) {
     UARTIntClear(UART0_BASE, ulStatus);
     // Loop while there are characters in the receive FIFO.
     //
-    while(UARTCharsAvail(UART0_BASE)) {
-        // Read the next character from the UART and write it back to the UART.
-        //
-    	//UARTCharPutNonBlocking(UART0_BASE, UARTCharGetNonBlocking(UART0_BASE));
-        UART_character = UARTCharGetNonBlocking(UART0_BASE);
-        StoreQuew(UART_character);
-    }
     portEND_SWITCHING_ISR(xHigherprioritytaskWoken);
+}
+
+void PinChangeIntHandler (void){
+	GPIOPinIntClear (GPIO_PORTF_BASE, GPIO_PIN_7);
+	GPIOPinIntClear (GPIO_PORTF_BASE, GPIO_PIN_5);
+}
+
+
+void Timer0IntHandler(void){
+	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+	/*char buf[90];
+	int fake_speed = 0;
+	fake_speed = 30;
+
+	sprintf(buf, "$GPRMC,194509.000,A,4042.6142,N,07400.4168,W,%d,221.11,160412,,,A*77\n", fake_speed);
+	UARTSend((unsigned char *)buf, 85, 1);*/
+}
+void Timer1IntHandler(void){
+	TimerIntClear(TIMER1_BASE, TIMER_TIMA_TIMEOUT);
+	/*char buf[90];
+
+	int fake_speed = 0;
+	fake_speed = 30;
+
+	sprintf(buf, "$GPRMC,194509.000,A,4042.6142,N,07400.4168,W,%d,221.11,160412,,,A*77\n", fake_speed);
+	UARTSend((unsigned char *)buf, 85, 1);*/
 }
 
 /*-----------------------------------------------------------*/
@@ -117,46 +146,98 @@ int main( void ) {
 	reset_peripheral();
 	/* Set the clocking to run from the PLL at 50 MHz.  Assumes 8MHz XTAL,
 	whereas some older eval boards used 6MHz. */
-	SysCtlClockSet( SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ );
-
+	initClock();
 
 	initPin();
+	initTimer();
+	initGPIO();
+	initConsole();
 	vSemaphoreCreateBinary(xBinarySemaphore);
+	xQueueGPS = xQueueCreate( 95, sizeof(UART_s ));
 
-	/* Create one of the two tasks. */
+	/* Create tasks. */
 	xTaskCreate( vReadGPS, "GPS Read Task", 240, NULL, 2, NULL );
-
-	/* Create the other task in exactly the same way.  Note this time that we
-	are creating the SAME task, but passing in a different parameter.  We are
-	creating two instances of a single task implementation. */
 	xTaskCreate( vDisplayTask, "Display Task", 300, NULL, 1, NULL );
+	xTaskCreate( vFakeGPS, "FakeGPS Task", 300, NULL, 1, NULL );
+
+
+	IntMasterEnable();
 
 	/* Start the scheduler so our tasks start executing. */
 	vTaskStartScheduler();	
 	
-	/* If all is well we will never reach here as the scheduler will now be
-	running.  If we do reach here then it is likely that there was insufficient
-	heap available for the idle task to be created. */
 	for( ;; );
 }
 /*-----------------------------------------------------------*/
 
+void vFakeGPS (void *pvParameters ){
+	char buf[90];
+	int fake_speed = 0;
+	fake_speed = 30;
+
+	for(;;){
+		vPrintString( "FakeGPS runing...\n" );
+		sprintf(buf, "$GPRMC,194509.000,A,4042.6142,N,07400.4168,W,%d,221.11,160412,,,A*77\n", fake_speed);
+		UARTSend((unsigned char *)buf, 85, 1);
+		vTaskDelay(400 / portTICK_RATE_MS); // Set display function to run at 15Hz
+	}
+}
+
+
+GPS_DATA_s store_char(GPS_DATA_s GPS_R_D, long UART_character){
+	if (UART_character == '$'){
+		GPS_R_D.UART_char_data_old[0] = '\0';
+		strcpy(GPS_R_D.UART_char_data_old, GPS_R_D.UART_char_data);
+		GPS_R_D.index = 0;
+		//read_data = 0;
+		GPS_R_D.UART_char_data[GPS_R_D.index] = UART_character;
+		GPS_R_D.index++;
+	}
+	else{
+		GPS_R_D.UART_char_data[GPS_R_D.index] = UART_character;
+		GPS_R_D.index++;
+	}
+	return GPS_R_D;
+}
+
+
 void vReadGPS( void *pvParameters ){
+	xSemaphoreTake(xBinarySemaphore, 0);
+	GPS_DATA_s GPS_RAW_DATA;
 
-	xSemaphoreTake(xBinarySemaphore, 0)
+	//UART_s UART_char;
+	long UART_character;
+
 	for( ;; ) {
-		xSemaphoreTake(xBinarySemaphore, portMAX_DELAY);
+		//vPrintString( "readGPS runing...\n" );
+		while(UARTCharsAvail(UART0_BASE)) {
+		    // Read the next character from the UART and write it back to the UART.
+		    //
+			UART_character = UARTCharGetNonBlocking(UART0_BASE);
+			GPS_RAW_DATA = store_char(GPS_RAW_DATA, UART_character);
+			//UARTCharPutNonBlocking(UART0_BASE, UARTCharGetNonBlocking(UART0_BASE));
+		    //UART_char.UART_character = UARTCharGetNonBlocking(UART0_BASE);
+		    //test = UART_char.UART_character;
+		    //vPrintString(UART_character);
+		    //if (UART_char.UART_character == '$'){
+		    //	xQueueSendToFrontFromISR(xQueueGPS, &UART_char, &xHigherprioritytaskWoken);
+		    //}
+		/*while (xQueueReceive(xQueueGPS, &UART_char, portMAX_DELAY) != errQUEUE_EMPTY){
+			UART_char_data[index] = UART_char.UART_character;
+			index++;
+		}*/
+		//sprintf(UART_char_data, "DATA %d\n",UART_char.UART_character);
 
-		readQue();
+		}
+		xSemaphoreTake(xBinarySemaphore, portMAX_DELAY);
+		vPrintString(GPS_RAW_DATA.UART_char_data);
+
+
 	}
 }
 
 void vDisplayTask( void *pvParameters ){
-	//void initDisplay (void);
-	volatile unsigned long ul;
-
-	// intialise the OLED display
-	RIT128x96x4Init(1000000);
+	initDisplay(); // intialise the OLED display
 
 	char stringA[30];
 	char stringB[30];
@@ -171,7 +252,10 @@ void vDisplayTask( void *pvParameters ){
 	/* As per most tasks, this task is implemented in an infinite loop. */
 	for( ;; ) {
 		/* Print out the name of this task. */
-		vPrintString( "hi\n" );
+		vPrintString( "Display Task Runing...\n" );
+		//vPrintString( UART_char_data );
+
+
 		sprintf(stringA, "Screen Working");
 		sprintf(stringB, "i = %d    ", i);
 		sprintf(stringC, "  ");
@@ -186,7 +270,6 @@ void vDisplayTask( void *pvParameters ){
 		RIT128x96x4StringDraw (stringE, 6, 58, 15);
 		RIT128x96x4StringDraw (stringF, 6, 70, 15);
 		RIT128x96x4StringDraw (stringG, 6, 82, 15);
-
 		i = i + 1;
 
 		vTaskDelay(66 / portTICK_RATE_MS); // Set display function to run at 15Hz
