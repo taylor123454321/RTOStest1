@@ -31,13 +31,13 @@ float buffed_speed = 0;
 float buffed_speed_1_old = 0;
 float angle = 0;
 float acceleration = 0;
-float latitude = 0;
-float longitude = 0;
+//float latitude = 0;
+//float longitude = 0;
 float distance = 0;
 int32_t latitude_fixed = 0;
 int32_t longitude_fixed = 0;
-uint32_t latitudeDegrees = 0;
-uint32_t longitudeDegrees = 0;
+//uint32_t latitudeDegrees = 0;
+//uint32_t longitudeDegrees = 0;
 char lat, lon;
 bool fix = 0;
 
@@ -51,9 +51,6 @@ int last_time = 0;		// Initialised value for the time of the previous debounce
 float HDOP = 0;
 float geoidheight = 0;
 float altitude = 0;
-
-clock real_time;
-long_lat location;
 
 
 //FUNCTIONS
@@ -141,10 +138,20 @@ float calculate_accleration(void){
     speed_guessed = k;
 }*/
 
-int decode_GGA(char *p){
+GGA_DATA_s decode_GGA(char *p){
+
+	GGA_DATA_s DATA;
+
 	int32_t degree;
 	long minutes;
 	char degreebuff[10];
+	clock real_time;
+	long_lat location;
+	float latitude = 0;
+	uint32_t latitudeDegrees = 0;
+	uint32_t longitudeDegrees = 0;
+
+
 
 	// GET TIME
 	p = strchr(p, ',')+1;
@@ -154,7 +161,7 @@ int decode_GGA(char *p){
 	real_time.minute = (time % 10000) / 100;
 	real_time.seconds = (time % 100);
 	real_time.milliseconds = fmod(timef, 1.0) * 1000;
-
+	DATA.real_time_s = real_time;
 
 	// GET LATITUDE
 	p = strchr(p, ',')+1;
@@ -174,6 +181,7 @@ int decode_GGA(char *p){
 		latitudeDegrees = (latitude - 100 * convert)/60.0 ;
 		latitudeDegrees += convert;
 	}
+	DATA.location_s = location;
 
 	p = strchr(p, ',')+1;
 	if (',' != *p) {
@@ -181,7 +189,7 @@ int decode_GGA(char *p){
 	    if (p[0] == 'N') lat = 'N';
 	    else if (p[0] == 'S') lat = 'S';
 	    else if (p[0] == ',') lat = 0;
-	    else return false;
+	    //else return false;
 	}
 
 	// GET LONGDITUDE
@@ -209,7 +217,7 @@ int decode_GGA(char *p){
 	    if (p[0] == 'W') lon = 'W';
 	    else if (p[0] == 'E') lon = 'E';
 	    else if (p[0] == ',') lon = 0;
-	    else return false;
+	    //else return false;
 	}
 	p = strchr(p, ',')+1;
 	if (',' != *p){
@@ -236,13 +244,17 @@ int decode_GGA(char *p){
 	if (',' != *p){
 	    geoidheight = atof(p);
 	}
-	return true;
+	return DATA;
 }
 
-int decode_RMC(char *p){
+RMC_DATA decode_RMC(char *p){
 	int32_t degree;
 	long minutes;
 	char degreebuff[10];
+
+	float longitude = 0;
+	uint32_t latitudeDegrees = 0;
+
 
 	// get time
 	p = strchr(p, ',')+1;
@@ -259,8 +271,8 @@ int decode_RMC(char *p){
 	    fix = true;
 	else if (p[0] == 'V')
 	    fix = false;
-	else
-	    return false;
+	//else
+	//    return false;
 
 	// parse out latitude
 	p = strchr(p, ',')+1;
@@ -287,7 +299,7 @@ int decode_RMC(char *p){
 	    if (p[0] == 'N') lat = 'N';
 	    else if (p[0] == 'S') lat = 'S';
 	    else if (p[0] == ',') lat = 0;
-	    else return false;
+	    //else return false;
 	}
 
 	// parse out longitude
@@ -315,7 +327,7 @@ int decode_RMC(char *p){
 	    if (p[0] == 'W') lon = 'W';
 	    else if (p[0] == 'E') lon = 'E';
 	    else if (p[0] == ',') lon = 0;
-	    else return false;
+	    //else return false;
 	}
 	// speed
 	p = strchr(p, ',')+1;
@@ -336,7 +348,7 @@ int decode_RMC(char *p){
 	    real_time.month = (fulldate % 10000) / 100;
 	    real_time.year = (fulldate % 100);
 	}
-	return true;
+	return DATA;
 }
 
 void update_array(void){
@@ -360,26 +372,25 @@ void update_array(void){
 }*/
 
 //Split data up into GGA,GSA,RMC,VTG
-bool split_data(char *data_incoming, bool read_data){
-	if (strstr(data_incoming, "GGA") != NULL && read_data == 0){
-		decode_GGA(data_incoming);
-		read_data = 1;
-		return read_data;
+GPS_DATA_DECODED_s split_data(char *data_incoming){
+	GGA_DATA_s GGA_DATA;
+	RMC_DATA_s RMC_DATA;
+	GPS_DATA_DECODED_s GPS_DATA_DECODED;
+	if (strstr(data_incoming, "GGA") != NULL){
+		GGA_DATA = decode_GGA(data_incoming);
 	}
-	else if (strstr(data_incoming, "RMC") != NULL && read_data == 0){
-		decode_RMC(data_incoming);
-		read_data = 1;
-		return read_data;
+	else if (strstr(data_incoming, "RMC") != NULL){
+		RMC_DATA = decode_RMC(data_incoming);
 	}
-	else if (strstr(data_incoming, "GSA") != NULL && read_data == 0){
-		read_data = 1;
-		return read_data;
+	else if (strstr(data_incoming, "GSA") != NULL){
 	}
-	else if (strstr(data_incoming, "VTG") != NULL && read_data == 0){
-		read_data = 1;
-		return read_data;
+	else if (strstr(data_incoming, "VTG") != NULL){
 	}
-	return read_data;
+
+	GPS_DATA_DECODED.firstbit = GGA_DATA;
+	GPS_DATA_DECODED.secondbit = RMC_DATA;
+
+	return GPS_DATA_DECODED;
 }
 
 

@@ -130,22 +130,9 @@ void PinChangeIntHandler (void){
 
 void Timer0IntHandler(void){
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
-	/*char buf[90];
-	int fake_speed = 0;
-	fake_speed = 30;
-
-	sprintf(buf, "$GPRMC,194509.000,A,4042.6142,N,07400.4168,W,%d,221.11,160412,,,A*77\n", fake_speed);
-	UARTSend((unsigned char *)buf, 85, 1);*/
 }
 void Timer1IntHandler(void){
 	TimerIntClear(TIMER1_BASE, TIMER_TIMA_TIMEOUT);
-	/*char buf[90];
-
-	int fake_speed = 0;
-	fake_speed = 30;
-
-	sprintf(buf, "$GPRMC,194509.000,A,4042.6142,N,07400.4168,W,%d,221.11,160412,,,A*77\n", fake_speed);
-	UARTSend((unsigned char *)buf, 85, 1);*/
 }
 
 /*-----------------------------------------------------------*/
@@ -188,19 +175,19 @@ void vFakeGPS (void *pvParameters ){
 		vPrintString( "FakeGPS runing...\n" );
 		sprintf(buf, "$GPRMC,194509.000,A,4042.6142,N,07400.4168,W,%d,221.11,160412,,,A*77\n", fake_speed);
 		UARTSend((unsigned char *)buf, 85, 1);
-		vTaskDelay(200 / portTICK_RATE_MS); // Set display function to run at 15Hz
+		vTaskDelay(400 / portTICK_RATE_MS); // Set display function to run at 15Hz
 	}
 }
 
 void vReadGPS( void *pvParameters ){
 	xSemaphoreTake(xBinarySemaphore, 0);
-
+	GPS_DATA_DECODED_s GPS_DATA_DECODED;
 	for( ;; ) {
 		//vPrintString( "readGPS runing...\n" );
 
 		//GPS_RAW_DATA = store_char(GPS_RAW_DATA, UART_character);
 		GPS_RUN ++;
-		split_data(UART_char_data_old, 0);
+		GPS_DATA_DECODED = split_data(UART_char_data_old);
 		xSemaphoreTake(xBinarySemaphore, portMAX_DELAY);
 
 
