@@ -33,6 +33,7 @@ main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/math.h
 main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/_defs.h
 main.obj: C:/ti/StellarisWare/inc/hw_uart.h
 main.obj: ../init.h
+main.obj: ../data_process.h
 main.obj: ../demo_code/basic_io.h
 
 ../main.c: 
@@ -68,4 +69,5 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/math.h:
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/_defs.h: 
 C:/ti/StellarisWare/inc/hw_uart.h: 
 ../init.h: 
+../data_process.h: 
 ../demo_code/basic_io.h: 

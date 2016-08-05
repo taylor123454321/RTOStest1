@@ -107,12 +107,12 @@ typedef struct {
 } UART_s;
 
 
-typedef struct {
+/*typedef struct {
 	int index;
 	char UART_char_data[90];
 	char UART_char_data_old[90];
 
-} GPS_DATA_s;
+} GPS_DATA_s;*/
 
 
 // *******************************************************
