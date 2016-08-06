@@ -107,6 +107,35 @@ typedef struct {
 } UART_s;
 
 
+typedef struct {
+	clock real_time_ss;
+	long_lat location_ss;
+	uint8_t fixquality_ss;
+	uint8_t satellites_ss;
+	float HDOP_ss;
+	float altitude_ss;
+	float geoidheight_ss;
+} GGA_DATA_s;
+
+typedef struct {
+	bool fix_ss;
+	float angle_ss;
+	float speed_ss;
+} RMC_DATA_s;
+
+typedef struct {
+	clock real_time_s;
+	long_lat location_s;
+	uint8_t fixquality_s;
+	uint8_t satellites_s;
+	float HDOP_s;
+	float altitude_s;
+	float geoidheight_s;
+	bool fix_s;
+	float angle_s;
+	float speed_s;
+} GPS_DATA_DECODED_s;
+
 /*typedef struct {
 	int index;
 	char UART_char_data[90];

@@ -17,6 +17,7 @@ data_process.obj: C:/ti/StellarisWare/inc/hw_memmap.h
 data_process.obj: C:/ti/StellarisWare/inc/hw_types.h
 data_process.obj: C:/ti/StellarisWare/driverlib/timer.h
 data_process.obj: C:/ti/StellarisWare/driverlib/systick.h
+data_process.obj: ../data_process.h
 
 ../data_process.c: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdio.h: 
@@ -35,3 +36,4 @@ C:/ti/StellarisWare/inc/hw_memmap.h:
 C:/ti/StellarisWare/inc/hw_types.h: 
 C:/ti/StellarisWare/driverlib/timer.h: 
 C:/ti/StellarisWare/driverlib/systick.h: 
+../data_process.h: 

@@ -19,6 +19,7 @@
 #include "inc/hw_types.h"
 #include "driverlib/timer.h"
 #include "driverlib/systick.h"
+#include "data_process.h"
 
 
 #define false 0
@@ -26,36 +27,19 @@
 #define MAX_24BIT_VAL 0X0FFFFFF
 //GLOABAL VARIABLES
 
-float speed = 0;
 float buffed_speed = 0;
 float buffed_speed_1_old = 0;
-float angle = 0;
 float acceleration = 0;
-//float latitude = 0;
-//float longitude = 0;
 float distance = 0;
-int32_t latitude_fixed = 0;
-int32_t longitude_fixed = 0;
-//uint32_t latitudeDegrees = 0;
-//uint32_t longitudeDegrees = 0;
-char lat, lon;
-bool fix = 0;
 
 float time_array[5] = {1, 2, 3, 4, 5};
 float speed_array[5];
 
-uint8_t fixquality = 0;
-uint8_t satellites = 0;
-int count = 0;
 int last_time = 0;		// Initialised value for the time of the previous debounce
-float HDOP = 0;
-float geoidheight = 0;
-float altitude = 0;
-
 
 //FUNCTIONS
 
-float get_speed(void){
+/*float get_speed(void){
 	return speed;
 }
 
@@ -77,7 +61,7 @@ bool read_fix(void){
 
 float read_quality(void){
 	return HDOP;
-}
+}*/
 
 float read_distance(void){
 	return distance;
@@ -148,9 +132,10 @@ GGA_DATA_s decode_GGA(char *p){
 	clock real_time;
 	long_lat location;
 	float latitude = 0;
+	float longitude = 0;
 	uint32_t latitudeDegrees = 0;
 	uint32_t longitudeDegrees = 0;
-
+	char lat, lon;
 
 
 	// GET TIME
@@ -161,7 +146,7 @@ GGA_DATA_s decode_GGA(char *p){
 	real_time.minute = (time % 10000) / 100;
 	real_time.seconds = (time % 100);
 	real_time.milliseconds = fmod(timef, 1.0) * 1000;
-	DATA.real_time_s = real_time;
+	DATA.real_time_ss = real_time;
 
 	// GET LATITUDE
 	p = strchr(p, ',')+1;
@@ -181,7 +166,6 @@ GGA_DATA_s decode_GGA(char *p){
 		latitudeDegrees = (latitude - 100 * convert)/60.0 ;
 		latitudeDegrees += convert;
 	}
-	DATA.location_s = location;
 
 	p = strchr(p, ',')+1;
 	if (',' != *p) {
@@ -210,6 +194,7 @@ GGA_DATA_s decode_GGA(char *p){
 	    longitudeDegrees = (longitude - 100*convert_2)/60.0;
 	    longitudeDegrees += convert_2;
 	}
+	DATA.location_ss = location;
 
 	p = strchr(p, ',')+1;
 	if (',' != *p){
@@ -221,40 +206,47 @@ GGA_DATA_s decode_GGA(char *p){
 	}
 	p = strchr(p, ',')+1;
 	if (',' != *p){
-	    fixquality = atoi(p);
+		DATA.fixquality_ss = atoi(p);
 	}
 
 	p = strchr(p, ',')+1;
 	if (',' != *p){
-		satellites = atoi(p);
+		DATA.satellites_ss = atoi(p);
 	}
 
 	p = strchr(p, ',')+1;
 	if (',' != *p){
-	    HDOP = atof(p);
+	    DATA.HDOP_ss = atof(p);
 	}
 
 	p = strchr(p, ',')+1;
 	if (',' != *p){
-	    altitude = atof(p);
+	    DATA.altitude_ss = atof(p);
 	}
 
 	p = strchr(p, ',')+1;
 	p = strchr(p, ',')+1;
 	if (',' != *p){
-	    geoidheight = atof(p);
+	    DATA.geoidheight_ss = atof(p);
 	}
 	return DATA;
 }
 
-RMC_DATA decode_RMC(char *p){
+RMC_DATA_s decode_RMC(char *p){
+	RMC_DATA_s DATA;
 	int32_t degree;
 	long minutes;
 	char degreebuff[10];
 
+	clock real_time;
 	float longitude = 0;
+	float latitude = 0;
 	uint32_t latitudeDegrees = 0;
-
+	uint32_t longitudeDegrees = 0;
+	char lat, lon;
+	int32_t longitude_fixed = 0;
+	int32_t latitude_fixed = 0;
+	bool fix = 0;
 
 	// get time
 	p = strchr(p, ',')+1;
@@ -273,6 +265,7 @@ RMC_DATA decode_RMC(char *p){
 	    fix = false;
 	//else
 	//    return false;
+	DATA.fix_ss = fix;
 
 	// parse out latitude
 	p = strchr(p, ',')+1;
@@ -332,13 +325,13 @@ RMC_DATA decode_RMC(char *p){
 	// speed
 	p = strchr(p, ',')+1;
 	if (',' != *p){
-		speed = atof(p);
+		DATA.speed_ss = atof(p);
 	}
 
 	// angle
 	p = strchr(p, ',')+1;
 	if (',' != *p){
-	    angle = atof(p);
+	    DATA.angle_ss = atof(p);
 	}
 
 	p = strchr(p, ',')+1;
@@ -351,13 +344,13 @@ RMC_DATA decode_RMC(char *p){
 	return DATA;
 }
 
-void update_array(void){
+/*void update_array(void){
 	int i;
 	for (i = 0; i < 3; i++){
 		speed_array[i] = speed_array[i+1];
 	}
 	speed_array[4] = speed;
-}
+}*/
 
 /*void Timer0IntHandler(void) {
     // Clear the timer interrupt.
@@ -370,6 +363,23 @@ void update_array(void){
     //IntMasterDisable();
     //IntMasterEnable();
 }*/
+
+
+// Make one struct instead of two
+GPS_DATA_DECODED_s restructure_data(GGA_DATA_s GGA_DATA, RMC_DATA_s RMC_DATA){
+	GPS_DATA_DECODED_s GPS_DATA_DECODED;
+	GPS_DATA_DECODED.HDOP_s = GGA_DATA.HDOP_ss;
+	GPS_DATA_DECODED.altitude_s = GGA_DATA.altitude_ss;
+	GPS_DATA_DECODED.geoidheight_s = GGA_DATA.geoidheight_ss;
+	GPS_DATA_DECODED.real_time_s = GGA_DATA.real_time_ss;
+	GPS_DATA_DECODED.location_s = GGA_DATA.location_ss;
+	GPS_DATA_DECODED.fixquality_s = GGA_DATA.fixquality_ss;
+	GPS_DATA_DECODED.satellites_s = GGA_DATA.satellites_ss;
+	GPS_DATA_DECODED.fix_s = RMC_DATA.fix_ss;
+	GPS_DATA_DECODED.angle_s = RMC_DATA.angle_ss;
+	GPS_DATA_DECODED.speed_s = RMC_DATA.speed_ss;
+	return GPS_DATA_DECODED;
+}
 
 //Split data up into GGA,GSA,RMC,VTG
 GPS_DATA_DECODED_s split_data(char *data_incoming){
@@ -387,8 +397,7 @@ GPS_DATA_DECODED_s split_data(char *data_incoming){
 	else if (strstr(data_incoming, "VTG") != NULL){
 	}
 
-	GPS_DATA_DECODED.firstbit = GGA_DATA;
-	GPS_DATA_DECODED.secondbit = RMC_DATA;
+	GPS_DATA_DECODED = restructure_data(GGA_DATA, RMC_DATA);
 
 	return GPS_DATA_DECODED;
 }
