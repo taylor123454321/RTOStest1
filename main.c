@@ -140,14 +140,12 @@ void Timer1IntHandler(void){
 
 int main( void ) {
 	reset_peripheral();
-	/* Set the clocking to run from the PLL at 50 MHz.  Assumes 8MHz XTAL,
-	whereas some older eval boards used 6MHz. */
 	initClock();
-
 	initPin();
 	initTimer();
 	initGPIO();
 	initConsole();
+	send_data();
 	vSemaphoreCreateBinary(xBinarySemaphore);
 	//xQueueGPS = xQueueCreate( 95, sizeof(UART_s ));
 
@@ -166,19 +164,6 @@ int main( void ) {
 }
 /*-----------------------------------------------------------*/
 
-void vFakeGPS (void *pvParameters ){
-	char buf[90];
-	int fake_speed = 0;
-	fake_speed = 30;
-
-	for(;;){
-		vPrintString( "FakeGPS runing...\n" );
-		sprintf(buf, "$GPRMC,194509.000,A,4042.6142,N,07400.4168,W,%d,221.11,160412,,,A*77\n", fake_speed);
-		UARTSend((unsigned char *)buf, 85, 1);
-		vTaskDelay(400 / portTICK_RATE_MS); // Set display function to run at 15Hz
-	}
-}
-
 void vReadGPS( void *pvParameters ){
 	xSemaphoreTake(xBinarySemaphore, 0);
 	GPS_DATA_DECODED_s GPS_DATA_DECODED;
@@ -187,10 +172,8 @@ void vReadGPS( void *pvParameters ){
 
 		//GPS_RAW_DATA = store_char(GPS_RAW_DATA, UART_character);
 		GPS_RUN ++;
-		GPS_DATA_DECODED = split_data(UART_char_data_old);
+		GPS_DATA_DECODED = split_data(UART_char_data_old, GPS_DATA_DECODED);
 		xSemaphoreTake(xBinarySemaphore, portMAX_DELAY);
-
-
 	}
 }
 
@@ -224,6 +207,19 @@ void vDisplayTask( void *pvParameters ){
 		i = i + 1;
 
 		vTaskDelay(66 / portTICK_RATE_MS); // Set display function to run at 15Hz
+	}
+}
+
+void vFakeGPS (void *pvParameters ){
+	char buf[90];
+	int fake_speed = 0;
+	fake_speed = 30;
+
+	for(;;){
+		vPrintString( "FakeGPS runing...\n" );
+		sprintf(buf, "$GPRMC,194509.000,A,4042.6142,N,07400.4168,W,%d,221.11,160412,,,A*77\n", fake_speed);
+		UARTSend((unsigned char *)buf, 85, 1);
+		vTaskDelay(400 / portTICK_RATE_MS); // Set display function to run at 15Hz
 	}
 }
 /*-----------------------------------------------------------*/

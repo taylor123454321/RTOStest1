@@ -122,10 +122,8 @@ float calculate_accleration(void){
     speed_guessed = k;
 }*/
 
-GGA_DATA_s decode_GGA(char *p){
-
-	GGA_DATA_s DATA;
-
+// Decode fucntion for GGA NEMA sentence
+GPS_DATA_DECODED_s decode_GGA(char *p, GPS_DATA_DECODED_s DATA){
 	int32_t degree;
 	long minutes;
 	char degreebuff[10];
@@ -146,7 +144,7 @@ GGA_DATA_s decode_GGA(char *p){
 	real_time.minute = (time % 10000) / 100;
 	real_time.seconds = (time % 100);
 	real_time.milliseconds = fmod(timef, 1.0) * 1000;
-	DATA.real_time_ss = real_time;
+	DATA.real_time_s = real_time;
 
 	// GET LATITUDE
 	p = strchr(p, ',')+1;
@@ -194,7 +192,7 @@ GGA_DATA_s decode_GGA(char *p){
 	    longitudeDegrees = (longitude - 100*convert_2)/60.0;
 	    longitudeDegrees += convert_2;
 	}
-	DATA.location_ss = location;
+	DATA.location_s = location;
 
 	p = strchr(p, ',')+1;
 	if (',' != *p){
@@ -206,34 +204,34 @@ GGA_DATA_s decode_GGA(char *p){
 	}
 	p = strchr(p, ',')+1;
 	if (',' != *p){
-		DATA.fixquality_ss = atoi(p);
+		DATA.fixquality_s = atoi(p);
 	}
 
 	p = strchr(p, ',')+1;
 	if (',' != *p){
-		DATA.satellites_ss = atoi(p);
+		DATA.satellites_s = atoi(p);
 	}
 
 	p = strchr(p, ',')+1;
 	if (',' != *p){
-	    DATA.HDOP_ss = atof(p);
+	    DATA.HDOP_s = atof(p);
 	}
 
 	p = strchr(p, ',')+1;
 	if (',' != *p){
-	    DATA.altitude_ss = atof(p);
+	    DATA.altitude_s = atof(p);
 	}
 
 	p = strchr(p, ',')+1;
 	p = strchr(p, ',')+1;
 	if (',' != *p){
-	    DATA.geoidheight_ss = atof(p);
+	    DATA.geoidheight_s = atof(p);
 	}
 	return DATA;
 }
 
-RMC_DATA_s decode_RMC(char *p){
-	RMC_DATA_s DATA;
+// Decode fucntion for RMC NEMA sentence
+GPS_DATA_DECODED_s decode_RMC(char *p, GPS_DATA_DECODED_s DATA){
 	int32_t degree;
 	long minutes;
 	char degreebuff[10];
@@ -265,7 +263,7 @@ RMC_DATA_s decode_RMC(char *p){
 	    fix = false;
 	//else
 	//    return false;
-	DATA.fix_ss = fix;
+	DATA.fix_s = fix;
 
 	// parse out latitude
 	p = strchr(p, ',')+1;
@@ -325,13 +323,13 @@ RMC_DATA_s decode_RMC(char *p){
 	// speed
 	p = strchr(p, ',')+1;
 	if (',' != *p){
-		DATA.speed_ss = atof(p);
+		DATA.speed_s = atof(p);
 	}
 
 	// angle
 	p = strchr(p, ',')+1;
 	if (',' != *p){
-	    DATA.angle_ss = atof(p);
+	    DATA.angle_s = atof(p);
 	}
 
 	p = strchr(p, ',')+1;
@@ -366,38 +364,35 @@ RMC_DATA_s decode_RMC(char *p){
 
 
 // Make one struct instead of two
-GPS_DATA_DECODED_s restructure_data(GGA_DATA_s GGA_DATA, RMC_DATA_s RMC_DATA){
+/*GPS_DATA_DECODED_s restructure_data(GGA_DATA_s GGA_DATA, RMC_DATA_s RMC_DATA){
 	GPS_DATA_DECODED_s GPS_DATA_DECODED;
-	GPS_DATA_DECODED.HDOP_s = GGA_DATA.HDOP_ss;
-	GPS_DATA_DECODED.altitude_s = GGA_DATA.altitude_ss;
-	GPS_DATA_DECODED.geoidheight_s = GGA_DATA.geoidheight_ss;
-	GPS_DATA_DECODED.real_time_s = GGA_DATA.real_time_ss;
-	GPS_DATA_DECODED.location_s = GGA_DATA.location_ss;
-	GPS_DATA_DECODED.fixquality_s = GGA_DATA.fixquality_ss;
-	GPS_DATA_DECODED.satellites_s = GGA_DATA.satellites_ss;
-	GPS_DATA_DECODED.fix_s = RMC_DATA.fix_ss;
-	GPS_DATA_DECODED.angle_s = RMC_DATA.angle_ss;
-	GPS_DATA_DECODED.speed_s = RMC_DATA.speed_ss;
+	GPS_DATA_DECODED.HDOP_s = GGA_DATA.HDOP_s;
+	GPS_DATA_DECODED.altitude_s = GGA_DATA.altitude_s;
+	GPS_DATA_DECODED.geoidheight_s = GGA_DATA.geoidheight_s;
+	GPS_DATA_DECODED.real_time_s = GGA_DATA.real_time_s;
+	GPS_DATA_DECODED.location_s = GGA_DATA.location_s;
+	GPS_DATA_DECODED.fixquality_s = GGA_DATA.fixquality_s;
+	GPS_DATA_DECODED.satellites_s = GGA_DATA.satellites_s;
+	GPS_DATA_DECODED.fix_s = RMC_DATA.fix_s;
+	GPS_DATA_DECODED.angle_s = RMC_DATA.angle_s;
+	GPS_DATA_DECODED.speed_s = RMC_DATA.speed_s;
 	return GPS_DATA_DECODED;
-}
+}*/
 
 //Split data up into GGA,GSA,RMC,VTG
-GPS_DATA_DECODED_s split_data(char *data_incoming){
-	GGA_DATA_s GGA_DATA;
-	RMC_DATA_s RMC_DATA;
-	GPS_DATA_DECODED_s GPS_DATA_DECODED;
+GPS_DATA_DECODED_s split_data(char *data_incoming, GPS_DATA_DECODED_s GPS_DATA_DECODED){
 	if (strstr(data_incoming, "GGA") != NULL){
-		GGA_DATA = decode_GGA(data_incoming);
+		GPS_DATA_DECODED = decode_GGA(data_incoming, GPS_DATA_DECODED);
 	}
 	else if (strstr(data_incoming, "RMC") != NULL){
-		RMC_DATA = decode_RMC(data_incoming);
+		GPS_DATA_DECODED = decode_RMC(data_incoming, GPS_DATA_DECODED);
 	}
 	else if (strstr(data_incoming, "GSA") != NULL){
 	}
 	else if (strstr(data_incoming, "VTG") != NULL){
 	}
 
-	GPS_DATA_DECODED = restructure_data(GGA_DATA, RMC_DATA);
+	//GPS_DATA_DECODED = restructure_data(GGA_DATA, RMC_DATA);
 
 	return GPS_DATA_DECODED;
 }

@@ -33,12 +33,12 @@ bool flag2;
 	return string;
 }*/
 
-float read_speed(void){
+/*float read_speed(void){
 	float speed = 0;
 	speed = get_speed();
 	speed = speed*1.852;
 	return speed;
-}
+}*/
 
 int set_speed(int set_speed){
 	int button_data = return_button();

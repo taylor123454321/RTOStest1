@@ -102,27 +102,7 @@ typedef struct {
 } circBuf_t;
 
 
-typedef struct {
-	long UART_character;
-} UART_s;
-
-
-typedef struct {
-	clock real_time_ss;
-	long_lat location_ss;
-	uint8_t fixquality_ss;
-	uint8_t satellites_ss;
-	float HDOP_ss;
-	float altitude_ss;
-	float geoidheight_ss;
-} GGA_DATA_s;
-
-typedef struct {
-	bool fix_ss;
-	float angle_ss;
-	float speed_ss;
-} RMC_DATA_s;
-
+// Data from GPS feed into decoder, this is the struct for that data
 typedef struct {
 	clock real_time_s;
 	long_lat location_s;
