@@ -193,34 +193,25 @@ void vReadGPS( void *pvParameters ){
 	}
 }
 
+button_data_raw_s read_buttons(void){
+	button_data_raw_s raw_button_data;
+	raw_button_data.up = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_3) == GPIO_PIN_3);
+	raw_button_data.down = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_4) == GPIO_PIN_4);
+	raw_button_data.left = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_5) == GPIO_PIN_5);
+	raw_button_data.right = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_6) == GPIO_PIN_6);
+	raw_button_data.select = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_7) == GPIO_PIN_7);
+	return raw_button_data;
+}
+
 void vDebounceButtons(void *pvParameters){
 
 	button_data_s button_data;
-
-	bool raw_down = 0;			// raw pin value for the down button
-	bool raw_up = 0;			// raw pin value for the up button
-	bool raw_left = 0;
-	bool raw_right = 0;
-	bool raw_select = 0;
+	button_data_raw_s raw_button_data;
 
 	while(1){
-		raw_up = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_3) == GPIO_PIN_3);
-		raw_down = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_4) == GPIO_PIN_4);
-		raw_left = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_5) == GPIO_PIN_5);
-		raw_right = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_6) == GPIO_PIN_6);
-		raw_select = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_7) == GPIO_PIN_7);
+		raw_button_data = read_buttons();
 
-		raw_up = invert_button(raw_up);
-		raw_down = invert_button(raw_down);
-		raw_left = invert_button(raw_left);
-		raw_right = invert_button(raw_right);
-		raw_select = invert_button(raw_select);
-
-		button_data.up = raw_up;
-		button_data.down = raw_down;
-		button_data.left = raw_left;
-		button_data.right = raw_right;
-		button_data.select = raw_select;
+		button_data = invert_button(raw_button_data);
 
 		xQueueSendToBack(xQueueButtons, &button_data, 0);
 
@@ -228,26 +219,6 @@ void vDebounceButtons(void *pvParameters){
 	}
 }
 
-// This function stores the altitude in a buffer "speed_buffer" for analysis later
-circBuf_t store_speed(float single_speed, circBuf_t speed_buffer){
-	if (single_speed > 150 ){
-		single_speed = 150;
-	}
-	speed_buffer.data[speed_buffer.windex] = single_speed;
-	speed_buffer.windex ++;
-	if (speed_buffer.windex >= speed_buffer.size){
-		speed_buffer.windex = 0;
-	}
-	return speed_buffer;
-}
-
-float analysis_speed(circBuf_t speed_buffer){
-	int i = 0;
-	float speed_sum = 0;
-	for (i = 0; i < BUF_SIZE; i++)
-	speed_sum += speed_buffer.data[i];
-	return (speed_sum/BUF_SIZE);
-}
 
 void vFilterSpeed( void *pvParameters ){
 	circBuf_t speed_buffer; // Buffer
@@ -273,7 +244,7 @@ void vDisplayTask( void *pvParameters ){
 	button_data_s button_data;
 	float buffed_speed_ = 0;
 
-	//acc_time_s acc_time;
+	acc_time_s acc_time;
 
 	int screen = 0;
 	int set_speed = 0;
@@ -286,10 +257,10 @@ void vDisplayTask( void *pvParameters ){
 		xQueueReceive(xQueueButtons, &button_data, 0);
 		xQueueReceive(xQueueBuffedSpeed, &buffed_speed_, 0);
 
-		screen = read_button_screen(button_data, screen, GPS_DATA_DECODED.fix_s);
+		screen = read_button_screen(button_data, screen, 1);//GPS_DATA_DECODED.fix_s);
 		set_speed = set_speed_func(set_speed, button_data, screen, GPS_DATA_DECODED.speed_s);
 
-		display(screen, 0, 0, set_speed, GPS_DATA_DECODED, buffed_speed_, 0, 0, UART_char_data_old, 0, 0);
+		display(screen, 0, 0, set_speed, GPS_DATA_DECODED, buffed_speed_, 0, 0, UART_char_data_old, 0, 0, acc_time);
 
 		vTaskDelay(66 / portTICK_RATE_MS); // Set display function to run at 15Hz
 	}

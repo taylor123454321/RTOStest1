@@ -150,8 +150,7 @@ void accleration_screen(float speed, float acc, float max_acc, acc_time_s acc_ti
 
 
 void display(int screen, float acc, float max_acc, int speed_set, GPS_DATA_DECODED_s DATA, float buffed_speed_,
-		int encoder, float distance, char * stuff, int aim_pos, unsigned long adc){
-	acc_time_s acc_times;
+		int encoder, float distance, char * stuff, int aim_pos, unsigned long adc, acc_time_s acc_times){
 	if (screen == 1){
 		set_speed_display(speed_set);
 	}

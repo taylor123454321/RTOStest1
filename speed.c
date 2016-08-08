@@ -21,6 +21,7 @@
 
 
 #define PI 3.14159265358979323846
+#define BUF_SIZE 8
 
 bool flag1;
 bool flag2;
@@ -92,11 +93,36 @@ int set_speed_func(int set_speed, button_data_s button_data, int screen, float s
 		flag1 = 1;
 	}
 	return set_speed;
-}*/
+}
 
 bool init_set_speed(void){
 	return flag2;
+}*/
+
+
+// This function stores the altitude in a buffer "speed_buffer" for analysis later
+circBuf_t store_speed(float single_speed, circBuf_t speed_buffer){
+	if (single_speed > 150 ){
+		single_speed = 150;
+	}
+	speed_buffer.data[speed_buffer.windex] = single_speed;
+	speed_buffer.windex ++;
+	if (speed_buffer.windex >= speed_buffer.size){
+		speed_buffer.windex = 0;
+	}
+	return speed_buffer;
 }
+
+// Store speed in buffer
+float analysis_speed(circBuf_t speed_buffer){
+	int i = 0;
+	float speed_sum = 0;
+	for (i = 0; i < BUF_SIZE; i++)
+	speed_sum += speed_buffer.data[i];
+	return (speed_sum/BUF_SIZE);
+}
+
+
 
 
 // this function connects speed to carb/rpm

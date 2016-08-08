@@ -126,6 +126,14 @@ typedef struct{
 	bool select;
 } button_data_s;
 
+typedef struct{
+	bool left;
+	bool right;
+	bool up;
+	bool down;
+	bool select;
+} button_data_raw_s;
+
 /*typedef struct {
 	int index;
 	char UART_char_data[90];
