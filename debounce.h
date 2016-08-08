@@ -13,14 +13,6 @@
 #include "inc/hw_types.h"
 
 
-bool button_choker(bool raw, bool raw_p, bool debounced);
-
-void debounce_button(void);
-
-int return_button(void);
-
-bool bit_check(int button_data, int n);
-
-
+bool invert_button(bool button);
 
 #endif /* DEBOUNCE_H_ */

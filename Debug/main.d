@@ -36,6 +36,7 @@ main.obj: ../init.h
 main.obj: ../data_process.h
 main.obj: ../debounce.h
 main.obj: ../display.h
+main.obj: ../speed.h
 main.obj: ../demo_code/basic_io.h
 
 ../main.c: 
@@ -74,4 +75,5 @@ C:/ti/StellarisWare/inc/hw_uart.h:
 ../data_process.h: 
 ../debounce.h: 
 ../display.h: 
+../speed.h: 
 ../demo_code/basic_io.h: 

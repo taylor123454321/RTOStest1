@@ -17,21 +17,14 @@
 #include "inc/hw_uart.h"
 #include "inc/hw_memmap.h"
 #include "data_process.h"
+#include "init.h"
+
 
 #define PI 3.14159265358979323846
 
 bool flag1;
 bool flag2;
 
-/*char uart_reading(void){
-	char string = 0;
-	string = UARTCharGet(UART0_BASE);
-	while(string != '$'){
-		string = UARTCharGet(UART0_BASE);
-		UARTCharPut(UART0_BASE, string);
-	}
-	return string;
-}*/
 
 /*float read_speed(void){
 	float speed = 0;
@@ -40,7 +33,22 @@ bool flag2;
 	return speed;
 }*/
 
-int set_speed(int set_speed){
+int set_speed_func(int set_speed, button_data_s button_data, int screen, float speed){
+	if (screen == 2){
+		set_speed = speed;
+	}
+	else {
+		if (button_data.up == 1){
+			set_speed ++;
+		}
+		else if (button_data.down == 1){
+			set_speed --;
+		}
+	}
+	return set_speed;
+}
+
+/*int set_speed(int set_speed){
 	int button_data = return_button();
 	bool down = bit_check(button_data, 0);
 	bool up = bit_check(button_data, 1);
@@ -84,7 +92,7 @@ int set_speed(int set_speed){
 		flag1 = 1;
 	}
 	return set_speed;
-}
+}*/
 
 bool init_set_speed(void){
 	return flag2;

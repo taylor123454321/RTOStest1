@@ -15,6 +15,8 @@
 // This function clears the display
 void clearDisplay(void);
 
+int read_button_screen(button_data_s button_data, int screen_old, bool fix);
+
 void password_display(void);
 
 void init_password(void);
@@ -27,10 +29,9 @@ void review_fuel_display(void);
 
 void no_fix_screen(clock time, uint8_t satellite, int encoder, int aim_pos);
 
-void accleration_screen(float speed, float acc, float max_acc, acc_time acc_times);
+void accleration_screen(float speed, float acc, float max_acc, acc_time_s acc_times);
 
-void display(int screen, float speed, float acc, float max_acc, int speed_set, uint8_t satellite,
-		int encoder_3, clock time, float distance, float quality, char * stuff, int aim_pos, unsigned long adc, acc_time acc_times);
-
+void display(int screen, float acc, float max_acc, int speed_set, GPS_DATA_DECODED_s DATA, float buffed_speed,
+		int encoder, float distance, char * stuff, int aim_pos, unsigned long adc);
 
 #endif /* DISPLAY_H_ */

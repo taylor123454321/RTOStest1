@@ -91,7 +91,7 @@ typedef struct {
 	float acc60;
 	float acc80;
 	float acc100;
-}acc_time;
+}acc_time_s;
 
 //*****************************************************************************
 // Buffer type declaration - set of unsigned longs
@@ -144,6 +144,6 @@ float * initCircBuf (circBuf_t *buffer, unsigned int size);
 
 void init_set_speed_data(cruise_data *data);
 
-void init_acc_time(acc_time *data);
+void init_acc_time(acc_time_s *data);
 
 #endif /* INIT_H_ */

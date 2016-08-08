@@ -17,14 +17,32 @@ void clearDisplay(void){
 	RIT128x96x4Clear();
 }
 
+int read_button_screen(button_data_s button_data, int screen_old, bool fix){
+	int screen = screen_old;
+	//button_data_s button_data = return_button();
+
+	if (fix == 0){
+		screen = 4;//no fix screen
+	}
+	else {
+		if (button_data.select == 1 || (fix == 1 && screen == 4)){// back function
+			screen = 0;
+		}
+		if (button_data.left == 1 && screen == 0){ //acceleration
+			screen = 2;
+		}
+		if ((button_data.up || button_data.down) == 1 && screen == 0){ // set speed
+			screen = 1;
+		}
+	}
+	if (screen_old != screen){
+		clearDisplay();
+	}
+	return screen;
+}
+
 void password_display(void){
-	char stringA[30];
-	char stringB[30];
-	char stringC[30];
-	char stringD[30];
-	char stringE[30];
-	char stringF[30];
-	char stringG[30];
+	char stringA[30];char stringB[30];char stringC[30];char stringD[30];char stringE[30];char stringF[30];char stringG[30];
 	sprintf(stringA, "Enter Password ");
 	sprintf(stringB, "  ");
 	sprintf(stringC, "  ");
@@ -49,15 +67,9 @@ void init_password(void){
 }
 
 void set_speed_display(int speed_set){
-	char stringA[30];
-	char stringB[30];
-	char stringC[30];
-	char stringD[30];
-	char stringE[30];
-	char stringF[30];
-	char stringG[30];
+	char stringA[30];char stringB[30];char stringC[30];char stringD[30];char stringE[30];char stringF[30];char stringG[30];
 	sprintf(stringA, "Set Speed Now!");
-	sprintf(stringB, "%d",speed_set);
+	sprintf(stringB, "%d  ",speed_set);
 	sprintf(stringC, "  ");
 	sprintf(stringD, "  ");
 	sprintf(stringE, "  ");
@@ -73,9 +85,7 @@ void set_speed_display(int speed_set){
 }
 
 void enter_fuel_display(void){
-	char stringA[30];
-	char stringB[30];
-	char stringC[30];
+	char stringA[30];char stringB[30];char stringC[30];
 	sprintf(stringA, "Fuel put in car");
 	sprintf(stringB, "In liters");
 	sprintf(stringC, "  ");
@@ -85,13 +95,7 @@ void enter_fuel_display(void){
 }
 
 void review_fuel_display(void){
-	char stringA[30];
-	char stringB[30];
-	char stringC[30];
-	char stringD[30];
-	char stringE[30];
-	char stringF[30];
-	char stringG[30];
+	char stringA[30];char stringB[30];char stringC[30];char stringD[30];char stringE[30];char stringF[30];char stringG[30];
 	sprintf(stringA, "Data of old fuel");
 	sprintf(stringB, "  ");
 	sprintf(stringC, "  ");
@@ -109,13 +113,7 @@ void review_fuel_display(void){
 }
 
 void no_fix_screen(clock time, uint8_t satellite, int encoder, int aim_pos){
-	char stringA[30];
-	char stringB[30];
-	char stringC[30];
-	char stringD[30];
-	char stringE[30];
-	char stringF[30];
-	char stringG[30];
+	char stringA[30];char stringB[30];char stringC[30];char stringD[30];char stringE[30];char stringF[30];char stringG[30];
 	sprintf(stringA, "Time %d.%d.%d.%d      ", time.hour, time.minute, time.seconds, time.milliseconds);
 	sprintf(stringB, "There is no fix :(  ");
 	sprintf(stringC, "Satellites  %d   ", satellite);
@@ -132,14 +130,8 @@ void no_fix_screen(clock time, uint8_t satellite, int encoder, int aim_pos){
 	RIT128x96x4StringDraw (stringG, 6, 82, 15);
 }
 
-void accleration_screen(float speed, float acc, float max_acc, acc_time acc_times){
-	char stringA[30];
-	char stringB[30];
-	char stringC[30];
-	char stringD[30];
-	char stringE[30];
-	char stringF[30];
-	char stringG[30];
+void accleration_screen(float speed, float acc, float max_acc, acc_time_s acc_times){
+	char stringA[30];char stringB[30];char stringC[30];char stringD[30];char stringE[30];char stringF[30];char stringG[30];
 	sprintf(stringA, "Speed %.1f    ", speed);
 	sprintf(stringB, "Acc %.1f Max %.1f   ", acc, max_acc);
 	sprintf(stringC, "0-20  %.1f      ", acc_times.acc20);
@@ -157,29 +149,24 @@ void accleration_screen(float speed, float acc, float max_acc, acc_time acc_time
 }
 
 
-void display(int screen, float speed, float acc, float max_acc, int speed_set, uint8_t satellite,
-		int encoder, clock time, float distance, float quality, char * stuff, int aim_pos, unsigned long adc, acc_time acc_times){
+void display(int screen, float acc, float max_acc, int speed_set, GPS_DATA_DECODED_s DATA, float buffed_speed_,
+		int encoder, float distance, char * stuff, int aim_pos, unsigned long adc){
+	acc_time_s acc_times;
 	if (screen == 1){
 		set_speed_display(speed_set);
 	}
 	else if (screen == 2){
-		accleration_screen(speed, acc, max_acc, acc_times);
+		accleration_screen(DATA.speed_s, acc, max_acc, acc_times);
 	}
 	else if (screen == 4){
-		no_fix_screen(time, satellite, encoder, aim_pos);
+		no_fix_screen(DATA.real_time_s, DATA.satellites_s, encoder, aim_pos);
 	}
 	else {
-		char stringA[30];
-		char stringB[30];
-		char stringC[30];
-		char stringD[30];
-		char stringE[30];
-		//char stringF[30];
-		char stringG[30];
-		sprintf(stringA, "Speed %.1f  %d.%d.%d  ", speed, time.hour, time.minute, time.seconds);
+		char stringA[30];char stringB[30];char stringC[30];char stringD[30];char stringE[30];char stringG[30];
+		sprintf(stringA, "Speed %.1f  %d.%d.%d  ", buffed_speed_, DATA.real_time_s.hour, DATA.real_time_s.minute, DATA.real_time_s.seconds);
 		sprintf(stringB, "Acc %.1f Max %.1f   ", acc, max_acc);
 		sprintf(stringC, "Set speed %d", speed_set);
-		sprintf(stringD, "Satellites %d ", satellite);
+		sprintf(stringD, "Satellites %d ", DATA.satellites_s);
 		//sprintf(stringE, "Quality %.2f ", quality);
 		sprintf(stringE, "ADC %d encoder %d   ", adc, encoder);
 		//sprintf(stringF, "  ");

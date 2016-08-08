@@ -10,10 +10,10 @@ speed.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/math.h
 speed.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/_defs.h
 speed.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdint.h
 speed.obj: ../speed.h
+speed.obj: ../init.h
 speed.obj: ../debounce.h
 speed.obj: C:/ti/StellarisWare/inc/hw_types.h
 speed.obj: ../display.h
-speed.obj: ../init.h
 speed.obj: C:/ti/StellarisWare/driverlib/uart.h
 speed.obj: C:/ti/StellarisWare/driverlib/sysctl.h
 speed.obj: C:/ti/StellarisWare/inc/hw_uart.h
@@ -31,10 +31,10 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/math.h:
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/_defs.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdint.h: 
 ../speed.h: 
+../init.h: 
 ../debounce.h: 
 C:/ti/StellarisWare/inc/hw_types.h: 
 ../display.h: 
-../init.h: 
 C:/ti/StellarisWare/driverlib/uart.h: 
 C:/ti/StellarisWare/driverlib/sysctl.h: 
 C:/ti/StellarisWare/inc/hw_uart.h: 

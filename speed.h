@@ -8,11 +8,13 @@
 #ifndef SPEED_H_
 #define SPEED_H_
 
-//char uart_reading(void);
+#include "init.h"
 
-float read_speed(void);
+//float read_speed(void);
 
-int set_speed(int set_speed);
+int set_speed_func(int set_speed, button_data_s button_data, int screen, float speed);
+
+//int set_speed(int set_speed);
 
 bool init_set_speed(void);
 

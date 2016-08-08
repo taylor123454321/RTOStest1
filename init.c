@@ -293,7 +293,7 @@ void init_set_speed_data(cruise_data *data){
 	data->old = 0;
 }
 
-void init_acc_time(acc_time *data){
+void init_acc_time(acc_time_s *data){
 	data->acc20 = 0;
 	data->acc40 = 0;
 	data->acc60 = 0;
