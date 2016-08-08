@@ -61,6 +61,8 @@
 /* User made library includes */
 #include "init.h"
 #include "data_process.h"
+#include "debounce.h"
+#include "display.h"
 
 
 /* Demo includes. */
@@ -73,21 +75,18 @@
 void vReadGPS( void *pvParameters );
 void vDisplayTask( void *pvParameters );
 void vFakeGPS( void *pvParameters );
+void vDebounceButtons( void *pvParameters );
 
 
-
-
-/* Define the strings that will be passed in as the task parameters.  These are
-defined const and off the stack to ensure they remain valid when the tasks are
-executing. */
-const char *pcTextForTask1 = "Task 1 is running\n";
-const char *pcTextForTask2 = "Task 2 is running\n";
 char UART_char_data[120];
 char UART_char_data_old[120];
 int index = 0;
 int GPS_RUN = 0;
+bool test = 0;
+button_data_s button_data;
 xSemaphoreHandle  xBinarySemaphore;
 //xQueueHandle xQueueGPS;
+xQueueHandle xQueueGPSDATA;
 
 void store_char(long UART_character, portBASE_TYPE xHigherprioritytaskWoken){
 	if (UART_character == '$'){
@@ -135,6 +134,41 @@ void Timer1IntHandler(void){
 	TimerIntClear(TIMER1_BASE, TIMER_TIMA_TIMEOUT);
 }
 
+int read_button_screen(int screen_old, bool fix){
+	int screen = screen_old;
+	test = 0;
+	//button_data_s button_data = return_button();
+
+	if (fix == 0){
+		screen = 4;//no fix screen
+	}
+	else {
+		if (button_data.select == 1 || (fix == 1 && screen == 4)){// back function
+			screen = 0;
+		}
+		if (button_data.left == 1 && screen == 0){
+			screen = 2;
+		}
+		if ((button_data.up || button_data.down) == 1 && screen == 0){ // set speed
+			screen = 1;
+		}
+	}
+	if (screen_old != screen){
+		clearDisplay();
+	}
+	return screen;
+}
+
+bool invert_button(bool button){
+	if (button == 0){
+		button = 1;
+	}
+	else {
+		button = 0;
+	}
+	return button;
+}
+
 /*-----------------------------------------------------------*/
 
 
@@ -145,21 +179,21 @@ int main( void ) {
 	initTimer();
 	initGPIO();
 	initConsole();
-	send_data();
+	send_data();send_data();send_data();
 	vSemaphoreCreateBinary(xBinarySemaphore);
-	//xQueueGPS = xQueueCreate( 95, sizeof(UART_s ));
+	//xQueueGPSchar = xQueueCreate( 95, sizeof(UART_s ));
+	xQueueGPSDATA = xQueueCreate( 1, sizeof(GPS_DATA_DECODED_s));
 
 	/* Create tasks. */
-	xTaskCreate( vReadGPS, "GPS Read Task", 240, NULL, 2, NULL );
+	xTaskCreate( vReadGPS, "GPS Read Task", 240, NULL, 3, NULL );
 	xTaskCreate( vDisplayTask, "Display Task", 300, NULL, 1, NULL );
 	//xTaskCreate( vFakeGPS, "FakeGPS Task", 300, NULL, 1, NULL );
-
+	xTaskCreate( vDebounceButtons, "Debounce Buttons Task", 240, NULL, 2, NULL );
 
 	IntMasterEnable();
 
 	/* Start the scheduler so our tasks start executing. */
 	vTaskStartScheduler();	
-	
 	for( ;; );
 }
 /*-----------------------------------------------------------*/
@@ -167,35 +201,66 @@ int main( void ) {
 void vReadGPS( void *pvParameters ){
 	xSemaphoreTake(xBinarySemaphore, 0);
 	GPS_DATA_DECODED_s GPS_DATA_DECODED;
-	for( ;; ) {
+	while(1) {
 		//vPrintString( "readGPS runing...\n" );
-
 		//GPS_RAW_DATA = store_char(GPS_RAW_DATA, UART_character);
 		GPS_RUN ++;
 		GPS_DATA_DECODED = split_data(UART_char_data_old, GPS_DATA_DECODED);
+		xQueueSendToBack(xQueueGPSDATA, &GPS_DATA_DECODED, 0);
 		xSemaphoreTake(xBinarySemaphore, portMAX_DELAY);
+	}
+}
+
+void vDebounceButtons(void *pvParameters){
+	bool raw_down = 1;			// raw pin value for the down button
+	bool raw_up = 1;			// raw pin value for the up button
+	bool raw_left = 1;
+	bool raw_right = 1;
+	bool raw_select = 1;
+
+	while(1){
+		raw_up = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_3) == GPIO_PIN_3);
+		raw_down = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_4) == GPIO_PIN_4);
+		raw_left = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_5) == GPIO_PIN_5);
+		raw_right = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_6) == GPIO_PIN_6);
+		raw_select = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_7) == GPIO_PIN_7);
+
+		raw_up = invert_button(raw_up);
+		raw_down = invert_button(raw_down);
+		raw_left = invert_button(raw_left);
+		raw_select = invert_button(raw_select);
+
+		button_data.up = raw_up;
+		button_data.down = raw_down;
+		button_data.left = raw_left;
+		button_data.right = raw_right;
+		button_data.select = raw_select;
+
+		vTaskDelay(14 / portTICK_RATE_MS); // Set display function to run at 15Hz
 	}
 }
 
 void vDisplayTask( void *pvParameters ){
 	initDisplay(); // intialise the OLED display
+	GPS_DATA_DECODED_s GPS_DATA_DECODED;
 
 	char stringA[30]; char stringB[30]; char stringC[30]; char stringD[30]; char stringE[30]; char stringF[30]; char stringG[30];
 	int i = 0;
+	int screen = 0;
 
 	/* As per most tasks, this task is implemented in an infinite loop. */
-	for( ;; ) {
+	while(1) {
 		/* Print out the name of this task. */
 		//vPrintString( "Display Task Runing...\n" );
-		//vPrintString( UART_char_data );
-
+		xQueueReceive(xQueueGPSDATA, &GPS_DATA_DECODED, portMAX_DELAY);
+		screen = read_button_screen(screen, 1);
 
 		sprintf(stringA, "Screen Working");
 		sprintf(stringB, "i = %d    ", i);
-		sprintf(stringC, "  ");
-		sprintf(stringD, "  ");
+		sprintf(stringC, "Screen %d   ", screen);
+		sprintf(stringD, "Button select = %d    ", button_data.right);
 		sprintf(stringE, "GPS_RUN = %d  ",GPS_RUN);
-		sprintf(stringF, "  ");
+		sprintf(stringF, "Test = %d     ", test);
 		sprintf(stringG, "  ");
 		RIT128x96x4StringDraw (stringA, 6, 12, 15);
 		RIT128x96x4StringDraw (stringB, 6, 24, 15);
@@ -203,7 +268,7 @@ void vDisplayTask( void *pvParameters ){
 		RIT128x96x4StringDraw (stringD, 6, 46, 15);
 		RIT128x96x4StringDraw (stringE, 6, 58, 15);
 		RIT128x96x4StringDraw (stringF, 6, 70, 15);
-		RIT128x96x4StringDraw (UART_char_data_old, 6, 82, 15);
+		//RIT128x96x4StringDraw (UART_char_data_old, 6, 82, 15);
 		i = i + 1;
 
 		vTaskDelay(66 / portTICK_RATE_MS); // Set display function to run at 15Hz
@@ -215,7 +280,7 @@ void vFakeGPS (void *pvParameters ){
 	int fake_speed = 0;
 	fake_speed = 30;
 
-	for(;;){
+	while(1){
 		vPrintString( "FakeGPS runing...\n" );
 		sprintf(buf, "$GPRMC,194509.000,A,4042.6142,N,07400.4168,W,%d,221.11,160412,,,A*77\n", fake_speed);
 		UARTSend((unsigned char *)buf, 85, 1);

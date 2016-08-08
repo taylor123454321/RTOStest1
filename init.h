@@ -52,6 +52,8 @@ void initADC(void);
 // Initlise the PWM for pin PWM4. This sets up the period and frequecy also.
 //void initPWMchan (void);
 
+void send_data(void);
+
 void UARTSend(const unsigned char *pucBuffer, unsigned long ulCount, int type);
 
 void initConsole (void);
@@ -115,6 +117,14 @@ typedef struct {
 	float angle_s;
 	float speed_s;
 } GPS_DATA_DECODED_s;
+
+typedef struct{
+	bool left;
+	bool right;
+	bool up;
+	bool down;
+	bool select;
+} button_data_s;
 
 /*typedef struct {
 	int index;

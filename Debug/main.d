@@ -34,6 +34,8 @@ main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/_defs.h
 main.obj: C:/ti/StellarisWare/inc/hw_uart.h
 main.obj: ../init.h
 main.obj: ../data_process.h
+main.obj: ../debounce.h
+main.obj: ../display.h
 main.obj: ../demo_code/basic_io.h
 
 ../main.c: 
@@ -70,4 +72,6 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/_defs.h:
 C:/ti/StellarisWare/inc/hw_uart.h: 
 ../init.h: 
 ../data_process.h: 
+../debounce.h: 
+../display.h: 
 ../demo_code/basic_io.h: 
