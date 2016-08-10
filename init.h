@@ -50,7 +50,7 @@ void initDisplay (void);
 void initADC(void);
 
 // Initlise the PWM for pin PWM4. This sets up the period and frequecy also.
-//void initPWMchan (void);
+void initPWMchan (void);
 
 void send_data(void);
 
@@ -133,6 +133,16 @@ typedef struct{
 	bool down;
 	bool select;
 } button_data_raw_s;
+
+typedef struct{
+	int prev_state;
+	int encoder;
+} encoder_s;
+
+typedef struct{
+	unsigned long duty;
+	bool direction;
+} PWM_DATA_s;
 
 /*typedef struct {
 	int index;

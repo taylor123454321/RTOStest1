@@ -20,6 +20,9 @@ speed.obj: C:/ti/StellarisWare/inc/hw_uart.h
 speed.obj: C:/ti/StellarisWare/inc/hw_memmap.h
 speed.obj: ../data_process.h
 speed.obj: C:/ti/StellarisWare/driverlib/timer.h
+speed.obj: C:/ti/StellarisWare/driverlib/pwm.h
+speed.obj: C:/ti/StellarisWare/driverlib/gpio.h
+speed.obj: C:/ti/StellarisWare/driverlib/pin_map.h
 
 ../speed.c: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdio.h: 
@@ -41,3 +44,6 @@ C:/ti/StellarisWare/inc/hw_uart.h:
 C:/ti/StellarisWare/inc/hw_memmap.h: 
 ../data_process.h: 
 C:/ti/StellarisWare/driverlib/timer.h: 
+C:/ti/StellarisWare/driverlib/pwm.h: 
+C:/ti/StellarisWare/driverlib/gpio.h: 
+C:/ti/StellarisWare/driverlib/pin_map.h: 

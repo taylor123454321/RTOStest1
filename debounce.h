@@ -13,6 +13,7 @@
 #include "inc/hw_types.h"
 #include "init.h"
 
+button_data_raw_s read_buttons(void);
 
 bool invert_bool(bool button);
 

@@ -18,10 +18,18 @@
 #include "inc/hw_memmap.h"
 #include "data_process.h"
 #include "init.h"
+#include "driverlib/pwm.h"
+#include "driverlib/gpio.h"
+
+
 
 
 #define PI 3.14159265358979323846
 #define BUF_SIZE 8
+
+
+#define GPIOHigh(x) GPIOPinWrite(GPIO_PORTF_BASE, x, x)//GPIO_PIN_1
+#define GPIOLow(x) GPIOPinWrite(GPIO_PORTF_BASE, x, 0)
 
 bool flag1;
 bool flag2;
@@ -122,19 +130,95 @@ float analysis_speed(circBuf_t speed_buffer){
 	return (speed_sum/BUF_SIZE);
 }
 
-
-
-
-// this function connects speed to carb/rpm
-int speed_feedback(float speed, int encoder, int set_speed){
-	int aim_pos = 0;// this is the position the stepper goes to
-	int error = set_speed - (int)speed;
-	aim_pos = 1*error;
-
-	return aim_pos;
+encoder_s encoder_quad(encoder_s encoder, unsigned long ul_A_Val, unsigned long ul_B_Val){
+	int current_state = 0;
+	if (!ul_A_Val){ //Check what state the pins at and assign that state to "current state"
+		if(!ul_B_Val){
+			current_state = 1;
+		}
+		else{
+			current_state = 2;
+		}
+	}
+	else{
+		if(ul_B_Val){
+			current_state = 3;
+		}
+		else{
+			current_state = 4;
+		}
+	}
+	// Check if the previous state is different from the current state.
+	// Determine what direction the encoder is spinning
+	if (current_state != encoder.prev_state){
+		if (abs(encoder.prev_state - current_state) == 1){
+			if(current_state > encoder.prev_state){
+				encoder.encoder --;
+			}
+			else{
+				encoder.encoder ++;
+			}
+		}
+		else{
+			if(current_state < encoder.prev_state){
+				encoder.encoder --;
+			}
+			else{
+				encoder.encoder ++;
+			}
+		}
+	}
+	encoder.prev_state = current_state; // Assign current state for next time the interrupt runs
+	return encoder;
 }
 
 
+// this function connects speed to carb/rpm
+PWM_DATA_s speed_feedback(float speed, int encoder, int set_speed, PWM_DATA_s PWM_DATA){
+	int aim_pos = 0;// this is the position the stepper goes to
+	int error = set_speed - (encoder/100);
+	aim_pos = 1*error;
+	if (aim_pos < 0){
+		PWM_DATA.direction = 0;
+		aim_pos = aim_pos;
+	}
+	else if (aim_pos >= 0){
+		PWM_DATA.direction = 1;
+		aim_pos = aim_pos;
+
+	}
+	aim_pos = abs(aim_pos);
+	if (aim_pos < 13){
+		aim_pos = 0;
+	}
+	else if (aim_pos > 98){
+		aim_pos = 98;
+	}
+	PWM_DATA.duty = aim_pos;
+
+	return PWM_DATA;
+}
+
+
+void PWM_duty(PWM_DATA_s PWM_DATA, unsigned long period){
+	PWMPulseWidthSet (PWM_BASE, PWM_OUT_4, period * PWM_DATA.duty / 100);
+}
+
+void PWM_direction(PWM_DATA_s PWM_DATA){
+	if (PWM_DATA.direction == 1){
+		GPIOHigh(GPIO_PIN_3);
+		GPIOLow(GPIO_PIN_2);
+
+	}
+	else if (PWM_DATA.direction == 0){
+		GPIOHigh(GPIO_PIN_3);
+		GPIOLow(GPIO_PIN_1);
+	}
+	else {
+		GPIOLow(GPIO_PIN_1);
+		GPIOLow(GPIO_PIN_2);
+	}
+}
 
 
 

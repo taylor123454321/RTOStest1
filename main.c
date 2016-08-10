@@ -52,6 +52,7 @@
 #include "driverlib/gpio.h"
 #include "driverlib/timer.h"
 
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -81,15 +82,22 @@ void vDisplayTask( void *pvParameters );
 void vFakeGPS( void *pvParameters );
 void vDebounceButtons( void *pvParameters );
 void vFilterSpeed( void *pvParameters );
-
+//void vEncoder( void *pvParameters );
+void vPWM( void *pvParameters );
 
 char UART_char_data[120];
 char UART_char_data_old[120];
 int index = 0;
-int GPS_RUN = 0;
+int value = 0;
+encoder_s encoder_1;
+signed int set_speed = 0;
+PWM_DATA_s PWM_DATA;
+
+
+
 xSemaphoreHandle  xBinarySemaphoreGPS;
 xSemaphoreHandle  xBinarySemaphoreFilter;
-//xQueueHandle xQueueGPS;
+xSemaphoreHandle  xBinarySemaphoreEncoder_1;
 xQueueHandle xQueueGPSDATA;
 xQueueHandle xQueueButtons;
 xQueueHandle xQueueSpeed;
@@ -129,95 +137,124 @@ void UARTIntHandler(void) {
 }
 
 void PinChangeIntHandler (void){
+	unsigned long ul_A_Val;
+	unsigned long ul_B_Val;
+	//portBASE_TYPE xHigherprioritytaskWoken = pdFALSE;
+
+	// Clear the interrupt (documentation recommends doing this early)
 	GPIOPinIntClear (GPIO_PORTF_BASE, GPIO_PIN_7);
 	GPIOPinIntClear (GPIO_PORTF_BASE, GPIO_PIN_5);
+
+	ul_A_Val = GPIOPinRead (GPIO_PORTF_BASE, GPIO_PIN_7); // Read the pin
+	ul_B_Val = GPIOPinRead (GPIO_PORTF_BASE, GPIO_PIN_5);
+
+	value ++;
+	encoder_1 = encoder_quad(encoder_1, ul_A_Val, ul_B_Val);
+
+	//xSemaphoreGiveFromISR(xBinarySemaphoreEncoder_1, &xHigherprioritytaskWoken);
+    //portEND_SWITCHING_ISR(xHigherprioritytaskWoken);
+
 }
 
 void Timer0IntHandler(void){
 	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);}
 void Timer1IntHandler(void){
 	TimerIntClear(TIMER1_BASE, TIMER_TIMA_TIMEOUT);}
-
-
-
 /*-----------------------------------------------------------*/
 int main( void ) {
+	IntMasterDisable();
 	reset_peripheral();
 	initClock();
 	initPin();
 	initTimer();
 	initGPIO();
 	initConsole();
+	initPWMchan();
 	send_data();send_data();send_data();
+
 	vSemaphoreCreateBinary(xBinarySemaphoreGPS);
 	vSemaphoreCreateBinary(xBinarySemaphoreFilter);
-	//xQueueGPSchar = xQueueCreate( 95, sizeof(UART_s ));
+	//vSemaphoreCreateBinary(xBinarySemaphoreEncoder_1);
+	//xBinarySemaphoreEncoder_1 = xSemaphoreCreateCounting(50,0);
+
 	xQueueGPSDATA = xQueueCreate( 1, sizeof(GPS_DATA_DECODED_s));
 	xQueueButtons = xQueueCreate( 1, sizeof(button_data_s));
 	xQueueSpeed = xQueueCreate( 1, sizeof(float));
 	xQueueBuffedSpeed = xQueueCreate( 1, sizeof(float));
 
 	/* Create tasks. */
-	xTaskCreate( vReadGPS, "GPS Read Task", 240, NULL, 3, NULL );
+	xTaskCreate( vReadGPS, "GPS Read Task", 240, NULL, 4, NULL );
 	xTaskCreate( vDisplayTask, "Display Task", 600, NULL, 1, NULL );
 	//xTaskCreate( vFakeGPS, "FakeGPS Task", 300, NULL, 1, NULL );
 	xTaskCreate( vDebounceButtons, "Debounce Buttons Task", 240, NULL, 2, NULL );
 	xTaskCreate( vFilterSpeed, "Filter Speed Task", 240, NULL, 2, NULL );
-
+	//xTaskCreate( vEncoder, "Encoder Task", 240, NULL, 3, NULL );
+	xTaskCreate( vPWM, "PWM Task", 240, NULL, 3, NULL );
 
 	IntMasterEnable();
 
 	/* Start the scheduler so our tasks start executing. */
 	vTaskStartScheduler();	
-	for( ;; );
+	while(1);
 }
 /*-----------------------------------------------------------*/
-
 void vReadGPS( void *pvParameters ){
 	xSemaphoreTake(xBinarySemaphoreGPS, 0);
-	//portBASE_TYPE xHigherprioritytaskWoken = pdFALSE;
 	GPS_DATA_DECODED_s GPS_DATA_DECODED;
 	while(1) {
-		//vPrintString( "readGPS runing...\n" );
-		//GPS_RAW_DATA = store_char(GPS_RAW_DATA, UART_character);
-		GPS_RUN ++;
 		GPS_DATA_DECODED = split_data(UART_char_data_old, GPS_DATA_DECODED);
-
 		xQueueSendToBack(xQueueGPSDATA, &GPS_DATA_DECODED, 0);
 
 		xSemaphoreGive(xBinarySemaphoreFilter);
-
 		xQueueSendToBack(xQueueSpeed, &GPS_DATA_DECODED.speed_s, 0);
-
 		xSemaphoreTake(xBinarySemaphoreGPS, portMAX_DELAY);
 	}
 }
 
-button_data_raw_s read_buttons(void){
-	button_data_raw_s raw_button_data;
-	raw_button_data.up = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_3) == GPIO_PIN_3);
-	raw_button_data.down = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_4) == GPIO_PIN_4);
-	raw_button_data.left = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_5) == GPIO_PIN_5);
-	raw_button_data.right = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_6) == GPIO_PIN_6);
-	raw_button_data.select = (GPIOPinRead (GPIO_PORTG_BASE, GPIO_PIN_7) == GPIO_PIN_7);
-	return raw_button_data;
-}
-
 void vDebounceButtons(void *pvParameters){
-
 	button_data_s button_data;
 	button_data_raw_s raw_button_data;
-
 	while(1){
 		raw_button_data = read_buttons();
-
 		button_data = invert_button(raw_button_data);
-
 		xQueueSendToBack(xQueueButtons, &button_data, 0);
 
 		vTaskDelay(14 / portTICK_RATE_MS); // Set display function to run at 75Hz
 	}
 }
+
+/*void vEncoder ( void *pvParameters ){
+	//int prev_state = 0;
+	xSemaphoreTake(xBinarySemaphoreEncoder_1, 0);
+
+	while(1){
+		//vPrintString( "E\n" );
+
+		encoder_1 = encoder_quad();
+		xSemaphoreTake(xBinarySemaphoreEncoder_1, portMAX_DELAY);
+
+	}
+}*/
+
+
+
+void vPWM(void *pvParameters){
+	unsigned long period;	// Period of PWM output.
+	period = SysCtlClockGet () / PWM_DIVIDER / PWM4_RATE_HZ;
+
+
+	PWM_DATA.duty = 50;
+	PWM_DATA.direction = 0;
+
+	while(1){
+		PWM_DATA = speed_feedback(0, encoder_1.encoder, 0, PWM_DATA);
+		PWM_direction(PWM_DATA);
+		PWM_duty(PWM_DATA, period);
+		vTaskDelay(33 / portTICK_RATE_MS); // Set display function to run at 30Hz
+	}
+}
+
+
 
 
 void vFilterSpeed( void *pvParameters ){
@@ -229,9 +266,7 @@ void vFilterSpeed( void *pvParameters ){
 
 	while(1){
 		xQueueReceive(xQueueSpeed, &speed_to_store, 0);
-
 		speed_buffer = store_speed(speed_to_store, speed_buffer);
-
 		buffed_speed_ = analysis_speed(speed_buffer);
 		xQueueSendToBack(xQueueBuffedSpeed, &buffed_speed_, 0);
 		xSemaphoreTake(xBinarySemaphoreFilter, portMAX_DELAY);
@@ -247,20 +282,21 @@ void vDisplayTask( void *pvParameters ){
 	acc_time_s acc_time;
 
 	int screen = 0;
-	int set_speed = 0;
 
 	/* As per most tasks, this task is implemented in an infinite loop. */
 	while(1) {
 		/* Print out the name of this task. */
 		//vPrintString( "Display Task Runing...\n" );
+		GPIOPinIntClear (GPIO_PORTF_BASE, GPIO_PIN_7);
+		GPIOPinIntClear (GPIO_PORTF_BASE, GPIO_PIN_5);
 		xQueueReceive(xQueueGPSDATA, &GPS_DATA_DECODED, 0);
 		xQueueReceive(xQueueButtons, &button_data, 0);
 		xQueueReceive(xQueueBuffedSpeed, &buffed_speed_, 0);
 
-		screen = read_button_screen(button_data, screen, 1);//GPS_DATA_DECODED.fix_s);
+		screen = read_button_screen(button_data, screen,1);// GPS_DATA_DECODED.fix_s);
 		set_speed = set_speed_func(set_speed, button_data, screen, GPS_DATA_DECODED.speed_s);
 
-		display(screen, 0, 0, set_speed, GPS_DATA_DECODED, buffed_speed_, 0, 0, UART_char_data_old, 0, 0, acc_time);
+		display(screen, 0, 0, set_speed, GPS_DATA_DECODED, buffed_speed_, encoder_1.encoder, 0, UART_char_data_old, 0, PWM_DATA.duty, acc_time);
 
 		vTaskDelay(66 / portTICK_RATE_MS); // Set display function to run at 15Hz
 	}

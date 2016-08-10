@@ -118,7 +118,7 @@ void no_fix_screen(clock time, uint8_t satellite, int encoder, int aim_pos){
 	sprintf(stringB, "There is no fix :(  ");
 	sprintf(stringC, "Satellites  %d   ", satellite);
 	sprintf(stringD, "");
-	sprintf(stringE, "");//Encoder %d    ", encoder);
+	sprintf(stringE, "Encoder %d    ", encoder);
 	sprintf(stringF, "");//Aim pos  %d     ", aim_pos);
 	sprintf(stringG, "");
 	RIT128x96x4StringDraw (stringA, 6, 12, 15);
@@ -164,8 +164,8 @@ void display(int screen, float acc, float max_acc, int speed_set, GPS_DATA_DECOD
 		char stringA[30];char stringB[30];char stringC[30];char stringD[30];char stringE[30];char stringG[30];
 		sprintf(stringA, "Speed %.1f  %d.%d.%d  ", buffed_speed_, DATA.real_time_s.hour, DATA.real_time_s.minute, DATA.real_time_s.seconds);
 		sprintf(stringB, "Acc %.1f Max %.1f   ", acc, max_acc);
-		sprintf(stringC, "Set speed %d", speed_set);
-		sprintf(stringD, "Satellites %d ", DATA.satellites_s);
+		sprintf(stringC, "Set speed %d    ", speed_set);
+		sprintf(stringD, "Satellites %d   ", DATA.satellites_s);
 		//sprintf(stringE, "Quality %.2f ", quality);
 		sprintf(stringE, "ADC %d encoder %d   ", adc, encoder);
 		//sprintf(stringF, "  ");

@@ -12,7 +12,7 @@
 #include "inc/hw_gpio.h"
 #include "inc/hw_uart.h"
 #include "driverlib/adc.h"
-//#include "driverlib/pwm.h"
+#include "driverlib/pwm.h"
 #include "driverlib/gpio.h"
 #include "driverlib/sysctl.h"
 //#include "driverlib/systick.h"
@@ -33,6 +33,9 @@
 // request for updates on antenna status
 #define PGCMD_ANTENNA "$PGCMD,33,1*6C\r\n"
 #define PGCMD_NOANTENNA "$PGCMD,33,0*6D\r\n"
+
+/* The highest available interrupt priority. */
+#define timerHIGHEST_PRIORITY			( 2 )
 
 // Global constants
 
@@ -76,7 +79,7 @@ void initGPIO(void){
     SysCtlPeripheralEnable (SYSCTL_PERIPH_GPIOG);
     GPIOPadConfigSet (GPIO_PORTG_BASE, GPIO_PIN_7 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
     SysCtlPeripheralEnable (SYSCTL_PERIPH_GPIOF);
-    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4);
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_3 | GPIO_PIN_2 );//| GPIO_PIN_3 | GPIO_PIN_4);
 }
 
 void initPin (void) {
@@ -126,8 +129,11 @@ void initADC(void){
 }
 
 // Initlise the PWM for pin PWM4. This sets up the period and frequecy also.
-/*void initPWMchan (void) {
+void initPWMchan(void) {
 	period = SysCtlClockGet () / PWM_DIVIDER / PWM4_RATE_HZ;
+
+    SysCtlPeripheralEnable (SYSCTL_PERIPH_PWM);
+
 
     SysCtlPeripheralEnable (SYSCTL_PERIPH_GPIOF);
     GPIOPinTypePWM (GPIO_PORTF_BASE, GPIO_PIN_2);
@@ -135,7 +141,6 @@ void initADC(void){
     SysCtlPeripheralEnable (SYSCTL_PERIPH_GPIOD);
     GPIOPinTypePWM (GPIO_PORTD_BASE, GPIO_PIN_1);
 
-    SysCtlPeripheralEnable (SYSCTL_PERIPH_PWM);
     //
     // Compute the PWM period based on the system clock.
     //
@@ -155,10 +160,10 @@ void initADC(void){
     //
     // Enable the PWM output signal.
     //
-    PWMOutputState (PWM_BASE, PWM_OUT_4_BIT, false);
-    PWMOutputState (PWM_BASE, PWM_OUT_1_BIT, false);
+    PWMOutputState (PWM_BASE, PWM_OUT_4_BIT, true);
+    PWMOutputState (PWM_BASE, PWM_OUT_1_BIT, true);
 
-}*/
+}
 
 // Send instruction to the GPS to set up how to frequency and inputs
 void send_data(void){

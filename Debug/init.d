@@ -9,6 +9,7 @@ init.obj: C:/ti/StellarisWare/inc/hw_ints.h
 init.obj: C:/ti/StellarisWare/inc/hw_gpio.h
 init.obj: C:/ti/StellarisWare/inc/hw_uart.h
 init.obj: C:/ti/StellarisWare/driverlib/adc.h
+init.obj: C:/ti/StellarisWare/driverlib/pwm.h
 init.obj: C:/ti/StellarisWare/driverlib/gpio.h
 init.obj: C:/ti/StellarisWare/driverlib/pin_map.h
 init.obj: C:/ti/StellarisWare/driverlib/sysctl.h
@@ -29,6 +30,7 @@ C:/ti/StellarisWare/inc/hw_ints.h:
 C:/ti/StellarisWare/inc/hw_gpio.h: 
 C:/ti/StellarisWare/inc/hw_uart.h: 
 C:/ti/StellarisWare/driverlib/adc.h: 
+C:/ti/StellarisWare/driverlib/pwm.h: 
 C:/ti/StellarisWare/driverlib/gpio.h: 
 C:/ti/StellarisWare/driverlib/pin_map.h: 
 C:/ti/StellarisWare/driverlib/sysctl.h: 
