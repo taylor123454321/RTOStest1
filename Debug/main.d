@@ -37,6 +37,9 @@ main.obj: ../data_process.h
 main.obj: ../debounce.h
 main.obj: ../display.h
 main.obj: ../speed.h
+main.obj: ../my_adc.h
+main.obj: C:/ti/StellarisWare/driverlib/adc.h
+main.obj: C:/ti/StellarisWare/boards/ek-lm3s1968/drivers/rit128x96x4.h
 main.obj: ../demo_code/basic_io.h
 
 ../main.c: 
@@ -76,4 +79,7 @@ C:/ti/StellarisWare/inc/hw_uart.h:
 ../debounce.h: 
 ../display.h: 
 ../speed.h: 
+../my_adc.h: 
+C:/ti/StellarisWare/driverlib/adc.h: 
+C:/ti/StellarisWare/boards/ek-lm3s1968/drivers/rit128x96x4.h: 
 ../demo_code/basic_io.h: 

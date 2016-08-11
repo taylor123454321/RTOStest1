@@ -141,7 +141,7 @@ typedef struct{
 
 typedef struct{
 	unsigned long duty;
-	bool direction;
+	int direction;
 } PWM_DATA_s;
 
 /*typedef struct {

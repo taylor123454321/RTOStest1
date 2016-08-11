@@ -79,7 +79,7 @@ void initGPIO(void){
     SysCtlPeripheralEnable (SYSCTL_PERIPH_GPIOG);
     GPIOPadConfigSet (GPIO_PORTG_BASE, GPIO_PIN_7 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
     SysCtlPeripheralEnable (SYSCTL_PERIPH_GPIOF);
-    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_3 | GPIO_PIN_2 );//| GPIO_PIN_3 | GPIO_PIN_4);
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_3 | GPIO_PIN_1 );//| GPIO_PIN_3 | GPIO_PIN_4);
 }
 
 void initPin (void) {
