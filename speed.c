@@ -146,9 +146,9 @@ int find_dir(int aim_pos){
 }
 
 // this function connects speed to carb/rpm
-PWM_DATA_s speed_feedback(float speed, int encoder, int set_speed, PWM_DATA_s PWM_DATA){
+PWM_DATA_s speed_feedback(PWM_speed_DATA_s PWM_speed_DATA, int encoder, PWM_DATA_s PWM_DATA){
 	int aim_pos = 0;// this is the position the motor goes to
-	int error_speed = set_speed - speed;
+	int error_speed = PWM_speed_DATA.set_speed - PWM_speed_DATA.speed;
 	int error_rotation = encoder;
 	aim_pos = error_rotation + 100*error_speed;
 

@@ -150,6 +150,16 @@ typedef struct{
 	int screen;
 } set_speed_s;
 
+typedef struct{
+	float speed;
+	int set_speed;
+} PWM_speed_DATA_s;
+
+typedef struct{
+	unsigned long ul_A_Val;
+	unsigned long ul_B_Val;
+} encoder_raw_DATA_s;
+
 /*typedef struct {
 	int index;
 	char UART_char_data[90];

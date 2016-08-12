@@ -90,27 +90,19 @@ void vPWM( void *pvParameters );
 char UART_char_data[120];
 char UART_char_data_old[120];
 int index = 0;
-int value = 0;
-//encoder_s encoder_1;
-PWM_DATA_s PWM_DATA;
 acc_time_s acc_time;
-unsigned long ul_A_Val;
-unsigned long ul_B_Val;
-int set_speed_G = 0;
-float speed_G = 0;
-
-
 
 xSemaphoreHandle  xBinarySemaphoreGPS;
 xSemaphoreHandle  xBinarySemaphoreFilter;
 xSemaphoreHandle  xBinarySemaphoreEncoder_1;
 xQueueHandle xQueueGPSDATA;
 xQueueHandle xQueueButtonsDislpay;
-//xQueueHandle xQueueButtonsSetSpeed;
 xQueueHandle xQueueSpeed;
 xQueueHandle xQueueBuffedSpeed;
 xQueueHandle xEncoder_1;
-
+xQueueHandle xPWM_DATA;
+xQueueHandle xPWM_speed_DATA;
+xQueueHandle xEncoder_raw_DATA;
 
 void store_char(long UART_character, portBASE_TYPE xHigherprioritytaskWoken){
 	if (UART_character == '$'){
@@ -146,6 +138,7 @@ void UARTIntHandler(void) {
 }
 
 void EncoderINT (void){
+	encoder_raw_DATA_s encoder_raw_DATA;
 
 	portBASE_TYPE xHigherprioritytaskWoken = pdFALSE;
 
@@ -153,11 +146,11 @@ void EncoderINT (void){
 	GPIOPinIntClear (GPIO_PORTF_BASE, GPIO_PIN_7);
 	GPIOPinIntClear (GPIO_PORTF_BASE, GPIO_PIN_5);
 
-	ul_A_Val = GPIOPinRead (GPIO_PORTF_BASE, GPIO_PIN_7); // Read the pin
-	ul_B_Val = GPIOPinRead (GPIO_PORTF_BASE, GPIO_PIN_5);
+	encoder_raw_DATA.ul_A_Val = GPIOPinRead (GPIO_PORTF_BASE, GPIO_PIN_7); // Read the pin
+	encoder_raw_DATA.ul_B_Val = GPIOPinRead (GPIO_PORTF_BASE, GPIO_PIN_5);
 
-	value ++;
-	//encoder_1 = encoder_quad(encoder_1, ul_A_Val, ul_B_Val);
+	xQueueSendToBackFromISR(xEncoder_raw_DATA, &encoder_raw_DATA, 0);
+
 	xSemaphoreGiveFromISR(xBinarySemaphoreEncoder_1, &xHigherprioritytaskWoken);
     portEND_SWITCHING_ISR(xHigherprioritytaskWoken);
 
@@ -186,10 +179,13 @@ int main( void ) {
 
 	xQueueGPSDATA = xQueueCreate( 1, sizeof(GPS_DATA_DECODED_s));
 	xQueueButtonsDislpay = xQueueCreate( 1, sizeof(button_data_s));
-	//xQueueButtonsDislpay = xQueueCreate( 1, sizeof(button_data_s));
 	xQueueSpeed = xQueueCreate( 1, sizeof(float));
 	xQueueBuffedSpeed = xQueueCreate( 1, sizeof(float));
 	xEncoder_1 = xQueueCreate( 1, sizeof(encoder_s));
+	xPWM_DATA = xQueueCreate( 1, sizeof(PWM_DATA_s));
+	xPWM_speed_DATA = xQueueCreate( 1, sizeof(PWM_speed_DATA_s));
+	xEncoder_raw_DATA = xQueueCreate( 1, sizeof(PWM_DATA_s));
+
 
 	/* Create tasks. */
 	xTaskCreate( vReadGPS, "GPS Read Task", 240, NULL, 4, NULL );
@@ -257,11 +253,17 @@ void vDebounceButtons(void *pvParameters){
 
 
 void vEncoder ( void *pvParameters ){
-	//int prev_state = 0;
+	encoder_raw_DATA_s encoder_raw_DATA;
 	encoder_s encoder_1;
+	encoder_1.angle = 0;
 	xSemaphoreTake(xBinarySemaphoreEncoder_1, 0);
+	unsigned long ul_A_Val = 0;
+	unsigned long ul_B_Val = 0;
 
 	while(1){
+		xQueueReceive(xEncoder_raw_DATA, &encoder_raw_DATA, 0);
+		ul_A_Val = encoder_raw_DATA.ul_A_Val;
+		ul_B_Val = encoder_raw_DATA.ul_B_Val;
 		encoder_1 = encoder_quad(encoder_1, ul_A_Val, ul_B_Val);
 
 		xQueueSendToBack(xEncoder_1, &encoder_1, 0);
@@ -273,6 +275,8 @@ void vPWM(void *pvParameters){
 	unsigned long period;	// Period of PWM output.
 	period = SysCtlClockGet () / PWM_DIVIDER / PWM4_RATE_HZ;
 	encoder_s encoder_1;
+	PWM_DATA_s PWM_DATA;
+	PWM_speed_DATA_s PWM_speed_DATA;
 
 
 	PWM_DATA.duty = 20;
@@ -280,9 +284,13 @@ void vPWM(void *pvParameters){
 
 	while(1){
 		xQueueReceive(xEncoder_1, &encoder_1, 0);
-		PWM_DATA = speed_feedback(speed_G, encoder_1.angle, set_speed_G, PWM_DATA);
+		xQueueReceive(xPWM_speed_DATA, &PWM_speed_DATA, 0);
+
+
+		PWM_DATA = speed_feedback(PWM_speed_DATA, encoder_1.angle, PWM_DATA);
 		PWM_direction(PWM_DATA);
 		PWM_duty(PWM_DATA, period);
+		xQueueSendToBack(xPWM_DATA, &PWM_DATA, 0);
 		vTaskDelay(33 / portTICK_RATE_MS); // Set display function to run at 30Hz
 	}
 }
@@ -313,6 +321,9 @@ void vDisplayTask( void *pvParameters ){
 	set_speed.is_speed_set = 0;
 	set_speed.screen = 0;
 	encoder_s encoder_1;
+	PWM_DATA_s PWM_DATA;
+	PWM_speed_DATA_s PWM_speed_DATA;
+
 
 
 	/* As per most tasks, this task is implemented in an infinite loop. */
@@ -325,14 +336,18 @@ void vDisplayTask( void *pvParameters ){
 		xQueueReceive(xQueueButtonsDislpay, &button_data, 0);
 		xQueueReceive(xQueueBuffedSpeed, &buffed_speed_, 0);
 		xQueuePeek(xEncoder_1, &encoder_1, 0);
+		xQueueReceive(xPWM_DATA, &PWM_DATA, 0);
+
 
 		set_speed = read_button_screen(button_data,set_speed, GPS_DATA_DECODED.fix_s);
 		set_speed = set_speed_func(set_speed, button_data, GPS_DATA_DECODED.speed_s);
-		set_speed_G = set_speed.set_speed_value;
-		speed_G = GPS_DATA_DECODED.speed_s;
+		PWM_speed_DATA.set_speed = set_speed.set_speed_value;
+		PWM_speed_DATA.speed = GPS_DATA_DECODED.speed_s;
+
+		xQueueSendToBack(xPWM_speed_DATA, &PWM_speed_DATA, 0);
 
 
-		display(set_speed.screen, 0, 0, set_speed.set_speed_value, GPS_DATA_DECODED, buffed_speed_, encoder_1.angle, 0, UART_char_data_old, 0, value, acc_time, PWM_DATA);
+		display(set_speed.screen, 0, 0, set_speed.set_speed_value, GPS_DATA_DECODED, buffed_speed_, encoder_1.angle, 0, UART_char_data_old, 0, 0, acc_time, PWM_DATA);
 
 		vTaskDelay(66 / portTICK_RATE_MS); // Set display function to run at 15Hz
 	}
