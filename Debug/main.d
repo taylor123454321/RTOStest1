@@ -19,6 +19,7 @@ main.obj: ../include/semphr.h
 main.obj: ../include/queue.h
 main.obj: C:/ti/StellarisWare/inc/hw_types.h
 main.obj: C:/ti/StellarisWare/inc/hw_memmap.h
+main.obj: C:/ti/StellarisWare/inc/hw_uart.h
 main.obj: C:/ti/StellarisWare/driverlib/sysctl.h
 main.obj: ../rit128x96x4.h
 main.obj: C:/ti/StellarisWare/driverlib/uart.h
@@ -31,16 +32,15 @@ main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdbool.h
 main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/string.h
 main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/math.h
 main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/_defs.h
-main.obj: C:/ti/StellarisWare/inc/hw_uart.h
 main.obj: ../init.h
 main.obj: ../data_process.h
-main.obj: ../debounce.h
 main.obj: ../display.h
 main.obj: ../speed.h
-main.obj: ../my_adc.h
-main.obj: C:/ti/StellarisWare/driverlib/adc.h
-main.obj: C:/ti/StellarisWare/boards/ek-lm3s1968/drivers/rit128x96x4.h
 main.obj: ../demo_code/basic_io.h
+main.obj: ../ADC_interface.h
+main.obj: ../button_data.h
+main.obj: ../PWM_module.h
+main.obj: ../int_module.h
 
 ../main.c: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/string.h: 
@@ -61,6 +61,7 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stddef.h:
 ../include/queue.h: 
 C:/ti/StellarisWare/inc/hw_types.h: 
 C:/ti/StellarisWare/inc/hw_memmap.h: 
+C:/ti/StellarisWare/inc/hw_uart.h: 
 C:/ti/StellarisWare/driverlib/sysctl.h: 
 ../rit128x96x4.h: 
 C:/ti/StellarisWare/driverlib/uart.h: 
@@ -73,13 +74,12 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdbool.h:
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/string.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/math.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/_defs.h: 
-C:/ti/StellarisWare/inc/hw_uart.h: 
 ../init.h: 
 ../data_process.h: 
-../debounce.h: 
 ../display.h: 
 ../speed.h: 
-../my_adc.h: 
-C:/ti/StellarisWare/driverlib/adc.h: 
-C:/ti/StellarisWare/boards/ek-lm3s1968/drivers/rit128x96x4.h: 
 ../demo_code/basic_io.h: 
+../ADC_interface.h: 
+../button_data.h: 
+../PWM_module.h: 
+../int_module.h: 

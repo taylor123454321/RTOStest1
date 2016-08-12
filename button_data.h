@@ -5,8 +5,8 @@
  *      Author: Ryan Taylor
  */
 
-#ifndef DEBOUNCE_H_
-#define DEBOUNCE_H_
+#ifndef BUTTON_DATA_H_
+#define BUTTON_DATA_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -19,4 +19,4 @@ bool invert_bool(bool button);
 
 button_data_s invert_button(button_data_raw_s raw_button_data);
 
-#endif /* DEBOUNCE_H_ */
+#endif /* BUTTON_DATA_H_ */

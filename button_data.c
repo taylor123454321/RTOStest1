@@ -5,9 +5,9 @@
  *      Author: Ryan Taylor
  */
 
+#include <RTOStest1/button_data.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "debounce.h"
 #include "init.h"
 #include "driverlib/gpio.h"
 #include "inc\hw_memmap.h"

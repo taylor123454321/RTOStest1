@@ -44,32 +44,30 @@
 /* Stellaris library includes. */
 #include "inc\hw_types.h"
 #include "inc\hw_memmap.h"
-//#include "inc\hw_sysctl.h"
+#include "inc/hw_uart.h"
 #include "driverlib/sysctl.h"
 #include "rit128x96x4.h"
 #include "driverlib/uart.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/gpio.h"
 #include "driverlib/timer.h"
-
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
-#include "inc/hw_uart.h"
 
 /* User made library includes */
 #include "init.h"
 #include "data_process.h"
-#include "debounce.h"
 #include "display.h"
 #include "speed.h"
-#include "my_adc.h"
-
-
-/* Demo includes. */
 #include "demo_code\basic_io.h"
+#include "ADC_interface.h"
+#include "button_data.h"
+#include "PWM_module.h"
+#include "int_module.h"
+
+
 
 /* Used as a loop counter to create a very crude delay. */
 #define mainDELAY_LOOP_COUNT		( 0xfffff )
@@ -140,29 +138,7 @@ void UARTIntHandler(void) {
     portEND_SWITCHING_ISR(xHigherprioritytaskWoken);
 }
 
-void EncoderINT (void){
-	encoder_raw_DATA_s encoder_raw_DATA;
 
-	portBASE_TYPE xHigherprioritytaskWoken = pdFALSE;
-
-	// Clear the interrupt (documentation recommends doing this early)
-	GPIOPinIntClear (GPIO_PORTF_BASE, GPIO_PIN_7);
-	GPIOPinIntClear (GPIO_PORTF_BASE, GPIO_PIN_5);
-
-	encoder_raw_DATA.ul_A_Val = GPIOPinRead (GPIO_PORTF_BASE, GPIO_PIN_7); // Read the pin
-	encoder_raw_DATA.ul_B_Val = GPIOPinRead (GPIO_PORTF_BASE, GPIO_PIN_5);
-
-	xQueueSendToBackFromISR(xEncoder_raw_DATA, &encoder_raw_DATA, 0);
-
-	xSemaphoreGiveFromISR(xBinarySemaphoreEncoder_1, &xHigherprioritytaskWoken);
-    portEND_SWITCHING_ISR(xHigherprioritytaskWoken);
-
-}
-
-void Timer0IntHandler(void){
-	TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);}
-void Timer1IntHandler(void){
-	TimerIntClear(TIMER1_BASE, TIMER_TIMA_TIMEOUT);}
 /*-----------------------------------------------------------*/
 int main( void ) {
     main_init();
@@ -337,23 +313,6 @@ void vDisplayTask( void *pvParameters ){
 
 		vTaskDelay(66 / portTICK_RATE_MS);                                             // Set display task to run at 15Hz
 	}
-}
-
-// This function reads the value from ADC0 and returns it
-unsigned long run_adc(void){
-	uint16_t uiValue = 10;
-	unsigned long ulValue[1];
-	ADCProcessorTrigger(ADC0_BASE, 3);
-	//
-	// Wait for conversion to be completed.
-	while(!ADCIntStatus(ADC0_BASE, 3, false))
-	{
-	}
-	// Read ADC Value.
-	ADCSequenceDataGet(ADC0_BASE, 3, ulValue);
-	uiValue = (unsigned int) ulValue[0];
-
-	return uiValue;
 }
 
 /* Task to fake GPS data and read pot on ADC0 as speed then transmite on UART1 to UART0 */

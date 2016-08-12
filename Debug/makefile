@@ -10,10 +10,13 @@ GEN_OPTS__FLAG :=
 GEN_CMDS__FLAG := 
 
 ORDERED_OBJS += \
+"./ADC_interface.obj" \
+"./PWM_module.obj" \
+"./button_data.obj" \
 "./data_process.obj" \
-"./debounce.obj" \
 "./display.obj" \
 "./init.obj" \
+"./int_module.obj" \
 "./list.obj" \
 "./main.obj" \
 "./queue.obj" \
@@ -171,8 +174,8 @@ RTOStest1.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)$(BIN_OUTPUTS__QUOTED)
-	-$(RM) "data_process.d" "debounce.d" "display.d" "init.d" "list.d" "main.d" "queue.d" "rit128x96x4.d" "speed.d" "startup_ccs.d" "tasks.d" "demo_code\basic_io.d" "portable\heap_2.d" "portable\port.d" 
-	-$(RM) "data_process.obj" "debounce.obj" "display.obj" "init.obj" "list.obj" "main.obj" "queue.obj" "rit128x96x4.obj" "speed.obj" "startup_ccs.obj" "tasks.obj" "demo_code\basic_io.obj" "portable\heap_2.obj" "portable\port.obj" "portable\portasm.obj" 
+	-$(RM) "ADC_interface.d" "PWM_module.d" "button_data.d" "data_process.d" "display.d" "init.d" "int_module.d" "list.d" "main.d" "queue.d" "rit128x96x4.d" "speed.d" "startup_ccs.d" "tasks.d" "demo_code\basic_io.d" "portable\heap_2.d" "portable\port.d" 
+	-$(RM) "ADC_interface.obj" "PWM_module.obj" "button_data.obj" "data_process.obj" "display.obj" "init.obj" "int_module.obj" "list.obj" "main.obj" "queue.obj" "rit128x96x4.obj" "speed.obj" "startup_ccs.obj" "tasks.obj" "demo_code\basic_io.obj" "portable\heap_2.obj" "portable\port.obj" "portable\portasm.obj" 
 	-$(RM) "portable\portasm.d" 
 	-@echo 'Finished clean'
 	-@echo ' '

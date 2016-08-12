@@ -52,10 +52,6 @@ void initADC(void);
 // Initlise the PWM for pin PWM4. This sets up the period and frequecy also.
 void initPWMchan (void);
 
-void send_data(void);
-
-void UARTSend(const unsigned char *pucBuffer, unsigned long ulCount, int type);
-
 void initConsole (void);
 
 void initTimer(void);

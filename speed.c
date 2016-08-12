@@ -9,28 +9,23 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <math.h>
+#include <RTOStest1/button_data.h>
 #include <stdint.h>
 #include "speed.h"
-#include "debounce.h"
 #include "display.h"
 #include "driverlib/uart.h"
 #include "inc/hw_uart.h"
 #include "inc/hw_memmap.h"
 #include "data_process.h"
 #include "init.h"
-#include "driverlib/pwm.h"
-#include "driverlib/gpio.h"
+
 
 
 
 
 #define PI 3.14159265358979323846
 #define BUF_SIZE 8
-#define PWM_MIN_DUTY 14
 
-
-#define GPIOHigh(x) GPIOPinWrite(GPIO_PORTF_BASE, x, x)//GPIO_PIN_1
-#define GPIOLow(x) GPIOPinWrite(GPIO_PORTF_BASE, x, 0)
 
 set_speed_s set_speed_func(set_speed_s set_speed, button_data_s button_data, float speed){
 	if (set_speed.is_speed_set == 1){
@@ -131,66 +126,7 @@ encoder_s encoder_quad(encoder_s encoder, encoder_raw_DATA_s encoder_raw_DATA){
 }
 
 
-int find_dir(int aim_pos){
-	int direction = 0;
-	if (aim_pos > 0){
-		direction = 1;//CCW
-	}
-	else if (aim_pos < 0){
-		direction = 2;//CW
-	}
-	else{
-		direction = 0;//Stopped
-	}
-	return direction;
-}
 
-// this function connects speed to carb/rpm
-PWM_DATA_s speed_feedback(PWM_speed_DATA_s PWM_speed_DATA, encoder_s encoder_1, PWM_DATA_s PWM_DATA){
-	int aim_pos = 0;// this is the position the motor goes to
-	int error_speed = PWM_speed_DATA.set_speed - PWM_speed_DATA.speed;
-	int error_rotation = encoder_1.position;
-	aim_pos = error_rotation + 100*error_speed;
-
-
-	if (aim_pos > 98 || aim_pos < -98){
-		PWM_DATA.duty = 98;
-		PWM_DATA.direction = find_dir(aim_pos);
-	}
-	else {
-		PWM_DATA.duty  = abs(aim_pos) - PWM_MIN_DUTY;
-		PWM_DATA.direction = find_dir(aim_pos);
-	}
-
-	signed int check = PWM_DATA.duty;
-
-	if (check < PWM_MIN_DUTY && check > -PWM_MIN_DUTY){
-		PWM_DATA.duty = 0;
-		PWM_DATA.direction = 0;
-	}
-	return PWM_DATA;
-}
-
-
-void PWM_duty(PWM_DATA_s PWM_DATA, unsigned long period){
-	PWMPulseWidthSet (PWM_BASE, PWM_OUT_4, period * PWM_DATA.duty / 100);
-}
-
-void PWM_direction(PWM_DATA_s PWM_DATA){
-	if (PWM_DATA.direction == 1){ // turns motor CCW
-		GPIOHigh(GPIO_PIN_3);
-		GPIOLow(GPIO_PIN_1);
-
-	}
-	else if (PWM_DATA.direction == 2){// turns motor CW
-		GPIOHigh(GPIO_PIN_1);
-		GPIOLow(GPIO_PIN_3);
-	}
-	else {							// turns motor off
-		GPIOLow(GPIO_PIN_1);
-		GPIOLow(GPIO_PIN_3);
-	}
-}
 
 /*void acceleration_test(float speed, acc_time_s acc_times){
 	int current_acc_time = 0;

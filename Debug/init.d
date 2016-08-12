@@ -21,6 +21,7 @@ init.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/linkage.h
 init.obj: C:/ti/StellarisWare/inc/hw_memmap.h
 init.obj: ../rit128x96x4.h
 init.obj: ../FreeRTOSConfig.h
+init.obj: ../ADC_interface.h
 
 ../init.c: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/stdbool.h: 
@@ -43,3 +44,4 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-arm_16.6.0.STS/include/linkage.h:
 C:/ti/StellarisWare/inc/hw_memmap.h: 
 ../rit128x96x4.h: 
 ../FreeRTOSConfig.h: 
+../ADC_interface.h: 
