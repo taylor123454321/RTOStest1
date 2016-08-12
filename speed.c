@@ -26,6 +26,7 @@
 
 #define PI 3.14159265358979323846
 #define BUF_SIZE 8
+#define PWM_MIN_DUTY 14
 
 
 #define GPIOHigh(x) GPIOPinWrite(GPIO_PORTF_BASE, x, x)//GPIO_PIN_1
@@ -173,29 +174,39 @@ encoder_s encoder_quad(encoder_s encoder, unsigned long ul_A_Val, unsigned long 
 }
 
 
+int find_dir(int aim_pos){
+	int direction = 0;
+	if (aim_pos < 0){
+		direction = 1;//CCW
+	}
+	else if (aim_pos > 0){
+		direction = 2;//CW
+	}
+	else{
+		direction = 0;//Stopped
+	}
+	return direction;
+}
+
 // this function connects speed to carb/rpm
 PWM_DATA_s speed_feedback(float speed, int encoder, int set_speed, PWM_DATA_s PWM_DATA){
-	int aim_pos = 0;// this is the position the stepper goes to
-	int error = set_speed - (encoder/100);
+	int scale = 3;
+	int aim_pos = 0;// this is the position the motor goes to
+	int error = set_speed - (encoder);
 	aim_pos = 1*error;
-	if (aim_pos < 0){
+
+	if (aim_pos > scale*98 || aim_pos < scale*-98){
+		PWM_DATA.duty = 98;
+		PWM_DATA.direction = find_dir(aim_pos);
+	}
+	else if (abs(aim_pos) < 5){
+		PWM_DATA.duty = 0;
 		PWM_DATA.direction = 0;
-		aim_pos = aim_pos;
 	}
-	else if (aim_pos >= 0){
-		PWM_DATA.direction = 1;
-		aim_pos = aim_pos;
-
+	else {
+		PWM_DATA.duty  = abs(aim_pos/scale) - PWM_MIN_DUTY;
+		PWM_DATA.direction = find_dir(aim_pos);
 	}
-	aim_pos = abs(aim_pos);
-	if (aim_pos < 13){
-		aim_pos = 0;
-	}
-	else if (aim_pos > 98){
-		aim_pos = 98;
-	}
-	PWM_DATA.duty = aim_pos;
-
 	return PWM_DATA;
 }
 
@@ -205,20 +216,46 @@ void PWM_duty(PWM_DATA_s PWM_DATA, unsigned long period){
 }
 
 void PWM_direction(PWM_DATA_s PWM_DATA){
-	if (PWM_DATA.direction == 1){
+	if (PWM_DATA.direction == 1){ // turns motor CCW
 		GPIOHigh(GPIO_PIN_3);
-		GPIOLow(GPIO_PIN_2);
+		GPIOLow(GPIO_PIN_1);
 
 	}
-	else if (PWM_DATA.direction == 0){
-		GPIOHigh(GPIO_PIN_3);
-		GPIOLow(GPIO_PIN_1);
+	else if (PWM_DATA.direction == 2){// turns motor CW
+		GPIOHigh(GPIO_PIN_1);
+		GPIOLow(GPIO_PIN_3);
 	}
-	else {
+	else {							// turns motor off
 		GPIOLow(GPIO_PIN_1);
-		GPIOLow(GPIO_PIN_2);
+		GPIOLow(GPIO_PIN_3);
 	}
 }
 
-
+/*void acceleration_test(float speed, acc_time_s acc_times){
+	int current_acc_time = 0;
+	bool started = 0;
+	if (speed < 3){
+		current_acc_time = 0;
+		init_acc_time(&acc_times); //reset time
+	}
+	if (speed > 3 && started == 0) {
+		started = 1;
+	}
+	if (speed > 20 && acc_times.acc20 == 0){
+		acc_times.acc20 = current_acc_time;
+	}
+	if (speed > 40 && acc_times.acc40 == 0){
+		acc_times.acc40 = current_acc_time;
+	}
+	if (speed > 60 && acc_times.acc60 == 0){
+		acc_times.acc60 = current_acc_time;
+	}
+	if (speed > 80 && acc_times.acc80 == 0){
+		acc_times.acc80 = current_acc_time;
+	}
+	if (speed > 100 && acc_times.acc100 == 0) {
+		acc_times.acc100 = current_acc_time;
+		started = 0;			 //finished
+	}
+}*/
 

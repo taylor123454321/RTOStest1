@@ -59,7 +59,7 @@ extern void xPortSysTickHandler(void);
 extern void UARTIntHandler(void);
 extern void Timer0IntHandler(void);
 extern void Timer1IntHandler(void);
-extern void PinChangeIntHandler (void);
+extern void EncoderINT (void);
 
 //*****************************************************************************
 //
@@ -119,7 +119,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // Analog Comparator 2
     IntDefaultHandler,                      // System Control (PLL, OSC, BO)
     IntDefaultHandler,                      // FLASH Control
-	PinChangeIntHandler,                    // GPIO Port F
+	EncoderINT,                             // GPIO Port F
     IntDefaultHandler,                      // GPIO Port G
     IntDefaultHandler,                      // GPIO Port H
     IntDefaultHandler,                      // UART2 Rx and Tx

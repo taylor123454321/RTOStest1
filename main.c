@@ -65,7 +65,7 @@
 #include "debounce.h"
 #include "display.h"
 #include "speed.h"
-
+#include "my_adc.h"
 
 
 /* Demo includes. */
@@ -82,8 +82,10 @@ void vDisplayTask( void *pvParameters );
 void vFakeGPS( void *pvParameters );
 void vDebounceButtons( void *pvParameters );
 void vFilterSpeed( void *pvParameters );
-//void vEncoder( void *pvParameters );
+void vEncoder( void *pvParameters );
 void vPWM( void *pvParameters );
+//void vCalculateAcceleration( void *pvParameters );
+
 
 char UART_char_data[120];
 char UART_char_data_old[120];
@@ -92,6 +94,9 @@ int value = 0;
 encoder_s encoder_1;
 signed int set_speed = 0;
 PWM_DATA_s PWM_DATA;
+acc_time_s acc_time;
+unsigned long ul_A_Val;
+unsigned long ul_B_Val;
 
 
 
@@ -136,10 +141,9 @@ void UARTIntHandler(void) {
     portEND_SWITCHING_ISR(xHigherprioritytaskWoken);
 }
 
-void PinChangeIntHandler (void){
-	unsigned long ul_A_Val;
-	unsigned long ul_B_Val;
-	//portBASE_TYPE xHigherprioritytaskWoken = pdFALSE;
+void EncoderINT (void){
+
+	portBASE_TYPE xHigherprioritytaskWoken = pdFALSE;
 
 	// Clear the interrupt (documentation recommends doing this early)
 	GPIOPinIntClear (GPIO_PORTF_BASE, GPIO_PIN_7);
@@ -149,10 +153,9 @@ void PinChangeIntHandler (void){
 	ul_B_Val = GPIOPinRead (GPIO_PORTF_BASE, GPIO_PIN_5);
 
 	value ++;
-	encoder_1 = encoder_quad(encoder_1, ul_A_Val, ul_B_Val);
-
-	//xSemaphoreGiveFromISR(xBinarySemaphoreEncoder_1, &xHigherprioritytaskWoken);
-    //portEND_SWITCHING_ISR(xHigherprioritytaskWoken);
+	//encoder_1 = encoder_quad(encoder_1, ul_A_Val, ul_B_Val);
+	xSemaphoreGiveFromISR(xBinarySemaphoreEncoder_1, &xHigherprioritytaskWoken);
+    portEND_SWITCHING_ISR(xHigherprioritytaskWoken);
 
 }
 
@@ -170,11 +173,12 @@ int main( void ) {
 	initGPIO();
 	initConsole();
 	initPWMchan();
+	initADC();
 	send_data();send_data();send_data();
 
 	vSemaphoreCreateBinary(xBinarySemaphoreGPS);
 	vSemaphoreCreateBinary(xBinarySemaphoreFilter);
-	//vSemaphoreCreateBinary(xBinarySemaphoreEncoder_1);
+	vSemaphoreCreateBinary(xBinarySemaphoreEncoder_1);
 	//xBinarySemaphoreEncoder_1 = xSemaphoreCreateCounting(50,0);
 
 	xQueueGPSDATA = xQueueCreate( 1, sizeof(GPS_DATA_DECODED_s));
@@ -185,11 +189,13 @@ int main( void ) {
 	/* Create tasks. */
 	xTaskCreate( vReadGPS, "GPS Read Task", 240, NULL, 4, NULL );
 	xTaskCreate( vDisplayTask, "Display Task", 600, NULL, 1, NULL );
-	//xTaskCreate( vFakeGPS, "FakeGPS Task", 300, NULL, 1, NULL );
-	xTaskCreate( vDebounceButtons, "Debounce Buttons Task", 240, NULL, 2, NULL );
+	xTaskCreate( vFakeGPS, "FakeGPS Task", 300, NULL, 2, NULL );
+	xTaskCreate( vDebounceButtons, "Debounce Buttons Task", 150, NULL, 2, NULL );
 	xTaskCreate( vFilterSpeed, "Filter Speed Task", 240, NULL, 2, NULL );
-	//xTaskCreate( vEncoder, "Encoder Task", 240, NULL, 3, NULL );
-	xTaskCreate( vPWM, "PWM Task", 240, NULL, 3, NULL );
+	xTaskCreate( vEncoder, "Encoder Task", 100, NULL, 3, NULL );
+	xTaskCreate( vPWM, "PWM Task", 100, NULL, 3, NULL );
+	//xTaskCreate( vCalculateAcceleration, "Acceleration Task", 240, NULL, 3, NULL );
+
 
 	IntMasterEnable();
 
@@ -211,30 +217,54 @@ void vReadGPS( void *pvParameters ){
 	}
 }
 
+/*void check_for_acc(button_data_s button_data){
+	if (button_data.left == 1 ){
+		vTaskResume(vCalculateAcceleration);
+	}
+	else if (button_data.select == 1) {
+		vTaskSuspend(vCalculateAcceleration);
+	}
+}*/
+
 void vDebounceButtons(void *pvParameters){
 	button_data_s button_data;
 	button_data_raw_s raw_button_data;
 	while(1){
 		raw_button_data = read_buttons();
 		button_data = invert_button(raw_button_data);
+		//check_for_acc(button_data);
+		button_data.left = 0;
 		xQueueSendToBack(xQueueButtons, &button_data, 0);
 
 		vTaskDelay(14 / portTICK_RATE_MS); // Set display function to run at 75Hz
 	}
 }
 
-/*void vEncoder ( void *pvParameters ){
+
+/*void vCalculateAcceleration(void *pvParameters){
+
+
+	vTaskSuspend(vCalculateAcceleration);
+	while(1){
+
+		acceleration_test(0, acc_time);
+		vTaskDelay(100 / portTICK_RATE_MS); // Set display function to run at 75Hz
+	}
+}*/
+
+
+void vEncoder ( void *pvParameters ){
 	//int prev_state = 0;
 	xSemaphoreTake(xBinarySemaphoreEncoder_1, 0);
 
 	while(1){
 		//vPrintString( "E\n" );
 
-		encoder_1 = encoder_quad();
+		encoder_1 = encoder_quad(encoder_1, ul_A_Val, ul_B_Val);
 		xSemaphoreTake(xBinarySemaphoreEncoder_1, portMAX_DELAY);
 
 	}
-}*/
+}
 
 
 
@@ -243,7 +273,7 @@ void vPWM(void *pvParameters){
 	period = SysCtlClockGet () / PWM_DIVIDER / PWM4_RATE_HZ;
 
 
-	PWM_DATA.duty = 50;
+	PWM_DATA.duty = 20;
 	PWM_DATA.direction = 0;
 
 	while(1){
@@ -279,7 +309,6 @@ void vDisplayTask( void *pvParameters ){
 	button_data_s button_data;
 	float buffed_speed_ = 0;
 
-	acc_time_s acc_time;
 
 	int screen = 0;
 
@@ -296,22 +325,41 @@ void vDisplayTask( void *pvParameters ){
 		screen = read_button_screen(button_data, screen,1);// GPS_DATA_DECODED.fix_s);
 		set_speed = set_speed_func(set_speed, button_data, screen, GPS_DATA_DECODED.speed_s);
 
-		display(screen, 0, 0, set_speed, GPS_DATA_DECODED, buffed_speed_, encoder_1.encoder, 0, UART_char_data_old, 0, PWM_DATA.duty, acc_time);
+		display(screen, 0, 0, set_speed, GPS_DATA_DECODED, buffed_speed_, encoder_1.encoder, 0, UART_char_data_old, 0, value, acc_time, PWM_DATA);
 
 		vTaskDelay(66 / portTICK_RATE_MS); // Set display function to run at 15Hz
 	}
 }
 
+// This function reads the value from ADC0 and returns it
+unsigned long run_adc(void){
+	uint16_t uiValue = 10;
+	unsigned long ulValue[1];
+	ADCProcessorTrigger(ADC0_BASE, 3);
+	//
+	// Wait for conversion to be completed.
+	while(!ADCIntStatus(ADC0_BASE, 3, false))
+	{
+	}
+	// Read ADC Value.
+	ADCSequenceDataGet(ADC0_BASE, 3, ulValue);
+	uiValue = (unsigned int) ulValue[0];
+
+	return uiValue;
+}
+
 void vFakeGPS (void *pvParameters ){
 	char buf[90];
 	int fake_speed = 0;
+	unsigned long adc = 0;
 	fake_speed = 30;
 
 	while(1){
-		vPrintString( "FakeGPS runing...\n" );
+		adc = run_adc()/7;
+		fake_speed = (int)adc;
 		sprintf(buf, "$GPRMC,194509.000,A,4042.6142,N,07400.4168,W,%d,221.11,160412,,,A*77\n", fake_speed);
 		UARTSend((unsigned char *)buf, 85, 1);
-		vTaskDelay(400 / portTICK_RATE_MS); // Set display function to run at 15Hz
+		vTaskDelay(100 / portTICK_RATE_MS); // Set display function to run at 15Hz
 	}
 }
 /*-----------------------------------------------------------*/

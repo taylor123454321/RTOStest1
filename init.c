@@ -24,6 +24,7 @@
 //#include "my_adc.h"
 #include "inc/hw_memmap.h"
 #include "rit128x96x4.h"
+#include "FreeRTOSConfig.h"
 
 // Defines for the GPS module
 #define BAUD_RATE 9600
@@ -98,11 +99,15 @@ void initPin (void) {
     // Enable the pin change interrupt
     GPIOPinIntEnable (GPIO_PORTF_BASE, GPIO_PIN_5);
 
+
     GPIOPadConfigSet (GPIO_PORTF_BASE, GPIO_PIN_7, GPIO_STRENGTH_2MA,
        GPIO_PIN_TYPE_STD_WPU);
     //
     // Set up the pin change interrupt (both edges)
     GPIOIntTypeSet (GPIO_PORTF_BASE, GPIO_PIN_7, GPIO_BOTH_EDGES);
+
+    IntPrioritySet( INT_GPIOF, configKERNEL_INTERRUPT_PRIORITY);
+
     //
     // Enable the pin change interrupt
     GPIOPinIntEnable (GPIO_PORTF_BASE, GPIO_PIN_7);
