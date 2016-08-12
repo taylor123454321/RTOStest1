@@ -17,8 +17,8 @@ void clearDisplay(void){
 	RIT128x96x4Clear();
 }
 
-int read_button_screen(button_data_s button_data, int screen_old, bool fix){
-	int screen = screen_old;
+set_speed_s read_button_screen(button_data_s button_data, set_speed_s set_speed, bool fix){
+	int screen = set_speed.screen;
 	//button_data_s button_data = return_button();
 
 	if (fix == 0){
@@ -33,12 +33,14 @@ int read_button_screen(button_data_s button_data, int screen_old, bool fix){
 		}
 		if ((button_data.up || button_data.down) == 1 && screen == 0){ // set speed
 			screen = 1;
+			set_speed.is_speed_set = 1;
 		}
 	}
-	if (screen_old != screen){
+	if (set_speed.screen != screen){
 		clearDisplay();
 	}
-	return screen;
+	set_speed.screen = screen;
+	return set_speed;
 }
 
 void password_display(void){

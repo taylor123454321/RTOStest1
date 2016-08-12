@@ -15,8 +15,7 @@
 // This function clears the display
 void clearDisplay(void);
 
-int read_button_screen(button_data_s button_data, int screen_old, bool fix);
-
+set_speed_s read_button_screen(button_data_s button_data, set_speed_s set_speed, bool fix);
 void password_display(void);
 
 void init_password(void);

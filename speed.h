@@ -10,13 +10,7 @@
 
 #include "init.h"
 
-//float read_speed(void);
-
-int set_speed_func(int set_speed, button_data_s button_data, int screen, float speed);
-
-//int set_speed(int set_speed);
-
-//bool init_set_speed(void);
+set_speed_s set_speed_func(set_speed_s set_speed, button_data_s button_data, float speed);
 
 circBuf_t store_speed(float single_speed, circBuf_t speed_buffer);
 

@@ -235,6 +235,8 @@ void initConsole (void) {
 	UARTConfigSetExpClk(UART1_BASE, SysCtlClockGet(),
 				BAUD_RATE, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
 				UART_CONFIG_PAR_NONE));//extra
+
+    IntPrioritySet( INT_UART0, configKERNEL_INTERRUPT_PRIORITY);
     //
     // Enable the UART interrupt.
     //

@@ -32,81 +32,38 @@
 #define GPIOHigh(x) GPIOPinWrite(GPIO_PORTF_BASE, x, x)//GPIO_PIN_1
 #define GPIOLow(x) GPIOPinWrite(GPIO_PORTF_BASE, x, 0)
 
-bool flag1;
-bool flag2;
-
-
-/*float read_speed(void){
-	float speed = 0;
-	speed = get_speed();
-	speed = speed*1.852;
-	return speed;
-}*/
-
-int set_speed_func(int set_speed, button_data_s button_data, int screen, float speed){
-	if (screen == 2){
-		set_speed = speed;
+set_speed_s set_speed_func(set_speed_s set_speed, button_data_s button_data, float speed){
+	if (set_speed.is_speed_set == 1){
+		set_speed.set_speed_value = speed;
+		set_speed.is_speed_set = 0;
 	}
 	else {
 		if (button_data.up == 1){
-			set_speed ++;
+			if (set_speed.set_speed_value >= 130){// over 130 it will be capped
+				set_speed.set_speed_value = 130;
+			}
+			else if (set_speed.set_speed_value <= 50){// less then 50 is capped
+				set_speed.set_speed_value = 50;
+			}
+			else{
+				set_speed.set_speed_value ++;
+			}
 		}
 		else if (button_data.down == 1){
-			set_speed --;
+			if (set_speed.set_speed_value <= 50){// less then 50 is capped
+				set_speed.set_speed_value = 50;
+			}
+			else if (set_speed.set_speed_value >= 130){// over 130 it will be capped
+				set_speed.set_speed_value = 130;
+			}
+			else {
+				set_speed.set_speed_value --;
+			}
 		}
 	}
 	return set_speed;
 }
 
-/*int set_speed(int set_speed){
-	int button_data = return_button();
-	bool down = bit_check(button_data, 0);
-	bool up = bit_check(button_data, 1);
-
-	//bool left = button_data & (1 << 2);
-	//bool right = button_data & (1 << 3);
-	//bool select = button_data & (1 << 4);
-
-	if(flag2 == 0){
-		flag2 = 1;
-	}
-
-	if (up == 1 && set_speed < 140 && flag1 == 1){
-		if (set_speed > 130){// over 130 it will be capped
-			set_speed = 130;
-		}
-		else if (set_speed < 50){// less then 50 is capped
-			set_speed = 50;
-		}
-		else{
-			set_speed ++;
-		}
-		flag1 = 0;
-	}
-	else if(down == 1 && set_speed > 0 && flag1 == 1){
-		if (set_speed < 50){// less then 50 is capped
-			set_speed = 50;
-		}
-		else if (set_speed > 130){// over 130 it will be capped
-			set_speed = 130;
-		}
-		else {
-			set_speed --;
-		}
-		flag1 = 0;
-		if (set_speed == 99){
-			clearDisplay();
-		}
-	}
-	else if (down == 0 && up == 0){
-		flag1 = 1;
-	}
-	return set_speed;
-}
-
-bool init_set_speed(void){
-	return flag2;
-}*/
 
 
 // This function stores the altitude in a buffer "speed_buffer" for analysis later
@@ -154,18 +111,18 @@ encoder_s encoder_quad(encoder_s encoder, unsigned long ul_A_Val, unsigned long 
 	if (current_state != encoder.prev_state){
 		if (abs(encoder.prev_state - current_state) == 1){
 			if(current_state > encoder.prev_state){
-				encoder.encoder --;
+				encoder.angle --;
 			}
 			else{
-				encoder.encoder ++;
+				encoder.angle ++;
 			}
 		}
 		else{
 			if(current_state < encoder.prev_state){
-				encoder.encoder --;
+				encoder.angle --;
 			}
 			else{
-				encoder.encoder ++;
+				encoder.angle ++;
 			}
 		}
 	}
@@ -176,10 +133,10 @@ encoder_s encoder_quad(encoder_s encoder, unsigned long ul_A_Val, unsigned long 
 
 int find_dir(int aim_pos){
 	int direction = 0;
-	if (aim_pos < 0){
+	if (aim_pos > 0){
 		direction = 1;//CCW
 	}
-	else if (aim_pos > 0){
+	else if (aim_pos < 0){
 		direction = 2;//CW
 	}
 	else{
@@ -190,22 +147,26 @@ int find_dir(int aim_pos){
 
 // this function connects speed to carb/rpm
 PWM_DATA_s speed_feedback(float speed, int encoder, int set_speed, PWM_DATA_s PWM_DATA){
-	int scale = 3;
 	int aim_pos = 0;// this is the position the motor goes to
-	int error = set_speed - (encoder);
-	aim_pos = 1*error;
+	int error_speed = set_speed - speed;
+	int error_rotation = encoder;
+	aim_pos = error_rotation + 100*error_speed;
 
-	if (aim_pos > scale*98 || aim_pos < scale*-98){
+
+	if (aim_pos > 98 || aim_pos < -98){
 		PWM_DATA.duty = 98;
 		PWM_DATA.direction = find_dir(aim_pos);
 	}
-	else if (abs(aim_pos) < 5){
+	else {
+		PWM_DATA.duty  = abs(aim_pos) - PWM_MIN_DUTY;
+		PWM_DATA.direction = find_dir(aim_pos);
+	}
+
+	signed int check = PWM_DATA.duty;
+
+	if (check < PWM_MIN_DUTY && check > -PWM_MIN_DUTY){
 		PWM_DATA.duty = 0;
 		PWM_DATA.direction = 0;
-	}
-	else {
-		PWM_DATA.duty  = abs(aim_pos/scale) - PWM_MIN_DUTY;
-		PWM_DATA.direction = find_dir(aim_pos);
 	}
 	return PWM_DATA;
 }

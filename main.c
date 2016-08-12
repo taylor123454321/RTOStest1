@@ -91,12 +91,13 @@ char UART_char_data[120];
 char UART_char_data_old[120];
 int index = 0;
 int value = 0;
-encoder_s encoder_1;
-signed int set_speed = 0;
+//encoder_s encoder_1;
 PWM_DATA_s PWM_DATA;
 acc_time_s acc_time;
 unsigned long ul_A_Val;
 unsigned long ul_B_Val;
+int set_speed_G = 0;
+float speed_G = 0;
 
 
 
@@ -104,9 +105,12 @@ xSemaphoreHandle  xBinarySemaphoreGPS;
 xSemaphoreHandle  xBinarySemaphoreFilter;
 xSemaphoreHandle  xBinarySemaphoreEncoder_1;
 xQueueHandle xQueueGPSDATA;
-xQueueHandle xQueueButtons;
+xQueueHandle xQueueButtonsDislpay;
+//xQueueHandle xQueueButtonsSetSpeed;
 xQueueHandle xQueueSpeed;
 xQueueHandle xQueueBuffedSpeed;
+xQueueHandle xEncoder_1;
+
 
 void store_char(long UART_character, portBASE_TYPE xHigherprioritytaskWoken){
 	if (UART_character == '$'){
@@ -179,12 +183,13 @@ int main( void ) {
 	vSemaphoreCreateBinary(xBinarySemaphoreGPS);
 	vSemaphoreCreateBinary(xBinarySemaphoreFilter);
 	vSemaphoreCreateBinary(xBinarySemaphoreEncoder_1);
-	//xBinarySemaphoreEncoder_1 = xSemaphoreCreateCounting(50,0);
 
 	xQueueGPSDATA = xQueueCreate( 1, sizeof(GPS_DATA_DECODED_s));
-	xQueueButtons = xQueueCreate( 1, sizeof(button_data_s));
+	xQueueButtonsDislpay = xQueueCreate( 1, sizeof(button_data_s));
+	//xQueueButtonsDislpay = xQueueCreate( 1, sizeof(button_data_s));
 	xQueueSpeed = xQueueCreate( 1, sizeof(float));
 	xQueueBuffedSpeed = xQueueCreate( 1, sizeof(float));
+	xEncoder_1 = xQueueCreate( 1, sizeof(encoder_s));
 
 	/* Create tasks. */
 	xTaskCreate( vReadGPS, "GPS Read Task", 240, NULL, 4, NULL );
@@ -233,8 +238,9 @@ void vDebounceButtons(void *pvParameters){
 		raw_button_data = read_buttons();
 		button_data = invert_button(raw_button_data);
 		//check_for_acc(button_data);
-		button_data.left = 0;
-		xQueueSendToBack(xQueueButtons, &button_data, 0);
+		//button_data.left = 0;
+		xQueueSendToBack(xQueueButtonsDislpay, &button_data, 0);
+
 
 		vTaskDelay(14 / portTICK_RATE_MS); // Set display function to run at 75Hz
 	}
@@ -242,11 +248,8 @@ void vDebounceButtons(void *pvParameters){
 
 
 /*void vCalculateAcceleration(void *pvParameters){
-
-
 	vTaskSuspend(vCalculateAcceleration);
 	while(1){
-
 		acceleration_test(0, acc_time);
 		vTaskDelay(100 / portTICK_RATE_MS); // Set display function to run at 75Hz
 	}
@@ -255,37 +258,34 @@ void vDebounceButtons(void *pvParameters){
 
 void vEncoder ( void *pvParameters ){
 	//int prev_state = 0;
+	encoder_s encoder_1;
 	xSemaphoreTake(xBinarySemaphoreEncoder_1, 0);
 
 	while(1){
-		//vPrintString( "E\n" );
-
 		encoder_1 = encoder_quad(encoder_1, ul_A_Val, ul_B_Val);
-		xSemaphoreTake(xBinarySemaphoreEncoder_1, portMAX_DELAY);
 
+		xQueueSendToBack(xEncoder_1, &encoder_1, 0);
+		xSemaphoreTake(xBinarySemaphoreEncoder_1, portMAX_DELAY);
 	}
 }
-
-
 
 void vPWM(void *pvParameters){
 	unsigned long period;	// Period of PWM output.
 	period = SysCtlClockGet () / PWM_DIVIDER / PWM4_RATE_HZ;
+	encoder_s encoder_1;
 
 
 	PWM_DATA.duty = 20;
 	PWM_DATA.direction = 0;
 
 	while(1){
-		PWM_DATA = speed_feedback(0, encoder_1.encoder, 0, PWM_DATA);
+		xQueueReceive(xEncoder_1, &encoder_1, 0);
+		PWM_DATA = speed_feedback(speed_G, encoder_1.angle, set_speed_G, PWM_DATA);
 		PWM_direction(PWM_DATA);
 		PWM_duty(PWM_DATA, period);
 		vTaskDelay(33 / portTICK_RATE_MS); // Set display function to run at 30Hz
 	}
 }
-
-
-
 
 void vFilterSpeed( void *pvParameters ){
 	circBuf_t speed_buffer; // Buffer
@@ -308,9 +308,12 @@ void vDisplayTask( void *pvParameters ){
 	GPS_DATA_DECODED_s GPS_DATA_DECODED;
 	button_data_s button_data;
 	float buffed_speed_ = 0;
+	set_speed_s set_speed;
+	set_speed.set_speed_value = 80;
+	set_speed.is_speed_set = 0;
+	set_speed.screen = 0;
+	encoder_s encoder_1;
 
-
-	int screen = 0;
 
 	/* As per most tasks, this task is implemented in an infinite loop. */
 	while(1) {
@@ -319,13 +322,17 @@ void vDisplayTask( void *pvParameters ){
 		GPIOPinIntClear (GPIO_PORTF_BASE, GPIO_PIN_7);
 		GPIOPinIntClear (GPIO_PORTF_BASE, GPIO_PIN_5);
 		xQueueReceive(xQueueGPSDATA, &GPS_DATA_DECODED, 0);
-		xQueueReceive(xQueueButtons, &button_data, 0);
+		xQueueReceive(xQueueButtonsDislpay, &button_data, 0);
 		xQueueReceive(xQueueBuffedSpeed, &buffed_speed_, 0);
+		xQueuePeek(xEncoder_1, &encoder_1, 0);
 
-		screen = read_button_screen(button_data, screen,1);// GPS_DATA_DECODED.fix_s);
-		set_speed = set_speed_func(set_speed, button_data, screen, GPS_DATA_DECODED.speed_s);
+		set_speed = read_button_screen(button_data,set_speed, GPS_DATA_DECODED.fix_s);
+		set_speed = set_speed_func(set_speed, button_data, GPS_DATA_DECODED.speed_s);
+		set_speed_G = set_speed.set_speed_value;
+		speed_G = GPS_DATA_DECODED.speed_s;
 
-		display(screen, 0, 0, set_speed, GPS_DATA_DECODED, buffed_speed_, encoder_1.encoder, 0, UART_char_data_old, 0, value, acc_time, PWM_DATA);
+
+		display(set_speed.screen, 0, 0, set_speed.set_speed_value, GPS_DATA_DECODED, buffed_speed_, encoder_1.angle, 0, UART_char_data_old, 0, value, acc_time, PWM_DATA);
 
 		vTaskDelay(66 / portTICK_RATE_MS); // Set display function to run at 15Hz
 	}

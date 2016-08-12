@@ -136,13 +136,19 @@ typedef struct{
 
 typedef struct{
 	int prev_state;
-	int encoder;
+	int angle;
 } encoder_s;
 
 typedef struct{
 	unsigned long duty;
 	int direction;
 } PWM_DATA_s;
+
+typedef struct{
+	int set_speed_value;
+	bool is_speed_set;
+	int screen;
+} set_speed_s;
 
 /*typedef struct {
 	int index;
