@@ -88,10 +88,10 @@ float analysis_speed(circBuf_t speed_buffer){
 	return (speed_sum/BUF_SIZE);
 }
 
-encoder_s encoder_quad(encoder_s encoder, unsigned long ul_A_Val, unsigned long ul_B_Val){
+encoder_s encoder_quad(encoder_s encoder, encoder_raw_DATA_s encoder_raw_DATA){
 	int current_state = 0;
-	if (!ul_A_Val){ //Check what state the pins at and assign that state to "current state"
-		if(!ul_B_Val){
+	if (!encoder_raw_DATA.ul_A_Val){ //Check what state the pins at and assign that state to "current state"
+		if(!encoder_raw_DATA.ul_B_Val){
 			current_state = 1;
 		}
 		else{
@@ -99,7 +99,7 @@ encoder_s encoder_quad(encoder_s encoder, unsigned long ul_A_Val, unsigned long 
 		}
 	}
 	else{
-		if(ul_B_Val){
+		if(encoder_raw_DATA.ul_B_Val){
 			current_state = 3;
 		}
 		else{
@@ -146,10 +146,10 @@ int find_dir(int aim_pos){
 }
 
 // this function connects speed to carb/rpm
-PWM_DATA_s speed_feedback(PWM_speed_DATA_s PWM_speed_DATA, int encoder, PWM_DATA_s PWM_DATA){
+PWM_DATA_s speed_feedback(PWM_speed_DATA_s PWM_speed_DATA, encoder_s encoder_1, PWM_DATA_s PWM_DATA){
 	int aim_pos = 0;// this is the position the motor goes to
 	int error_speed = PWM_speed_DATA.set_speed - PWM_speed_DATA.speed;
-	int error_rotation = encoder;
+	int error_rotation = encoder_1.position;
 	aim_pos = error_rotation + 100*error_speed;
 
 

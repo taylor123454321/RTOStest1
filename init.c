@@ -283,6 +283,21 @@ void initTimer(void){
 	TimerEnable(TIMER1_BASE, TIMER_A);
 }
 
+/* Runs main init for program */
+void main_init(void){
+    IntMasterDisable();
+    reset_peripheral();
+    initClock();
+    initPin();
+    initTimer();
+    initGPIO();
+    initConsole();
+    initPWMchan();
+    initADC();
+    initDisplay();                  // intialise the OLED display
+    send_data();send_data();send_data();
+}
+
 // *******************************************************
 // initCircBuf: Initialise the circBuf instance. Reset both indices to
 // the start of the buffer.  Dynamically allocate and clear the the
@@ -312,5 +327,4 @@ void init_acc_time(acc_time_s *data){
 	data->acc80 = 0;
 	data->acc100 = 0;
 }
-
 

@@ -60,6 +60,8 @@ void initConsole (void);
 
 void initTimer(void);
 
+void main_init(void);
+
 // Strut for time
 typedef struct{
 	uint8_t year;

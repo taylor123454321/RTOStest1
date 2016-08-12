@@ -27,7 +27,7 @@
 #define MAX_24BIT_VAL 0X0FFFFFF
 //GLOABAL VARIABLES
 
-float buffed_speed = 0;
+//float buffed_speed = 0;
 float buffed_speed_1_old = 0;
 float acceleration = 0;
 float distance = 0;
@@ -39,35 +39,8 @@ int last_time = 0;		// Initialised value for the time of the previous debounce
 
 //FUNCTIONS
 
-/*float get_speed(void){
-	return speed;
-}
 
-clock read_time(void){
-	return real_time;
-}
-
-uint8_t read_satillite(void){
-	return satellites;
-}
-
-long_lat read_location(void){
-	return location;
-}
-
-bool read_fix(void){
-	return fix;
-}
-
-float read_quality(void){
-	return HDOP;
-}*/
-
-float read_distance(void){
-	return distance;
-}
-
-float calculate_distance(void){
+/*float calculate_distance(void){
 	int current_time = SysTickValueGet();
 	int delta_time = 0;
 	if (current_time <= last_time){
@@ -85,20 +58,16 @@ float calculate_distance(void){
 		return distance;
 	}
 	return 0;
-}
+}*/
 
-float read_acceleration(float buff_s){
-	buffed_speed = buff_s;
-	return acceleration;
-}
 
-float calculate_accleration(void){
+/*float calculate_accleration(void){
 	float delta = buffed_speed - buffed_speed_1_old;
 	if (delta > 0.5 || delta < -0.5){
 		return delta;
 	}
 	return 0;
-}
+}*/
 
 /*void calculate_speed_future(float a){
     float s = 1, t = 1, k = 0;// variables used in data
