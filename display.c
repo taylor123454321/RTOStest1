@@ -151,7 +151,7 @@ void accleration_screen(float speed, float acc, float max_acc, acc_time_s acc_ti
 }
 
 
-void display(int screen, float acc, float max_acc, int speed_set, GPS_DATA_DECODED_s DATA, float buffed_speed_,
+void display(int screen, float acc, float max_acc, int speed_set, GPS_DATA_DECODED_s DATA, float buffed_speed,
 		unsigned long encoder, float distance, char * stuff, int aim_pos, unsigned long adc, acc_time_s acc_times, PWM_DATA_s PWM_DATA){
 	if (screen == 1){
 		set_speed_display(speed_set);
@@ -164,7 +164,7 @@ void display(int screen, float acc, float max_acc, int speed_set, GPS_DATA_DECOD
 	}
 	else {
 		char stringA[30];char stringB[30];char stringC[30];char stringD[30];char stringE[30];char stringG[30];
-		sprintf(stringA, "Speed %.1f  %d.%d.%d  ", buffed_speed_, DATA.real_time_s.hour, DATA.real_time_s.minute, DATA.real_time_s.seconds);
+		sprintf(stringA, "Speed %.1f  %d.%d.%d  ", buffed_speed, DATA.real_time_s.hour, DATA.real_time_s.minute, DATA.real_time_s.seconds);
 		sprintf(stringB, "Acc %.1f Max %.1f   ", acc, max_acc);
 		sprintf(stringC, "Set speed %d    ", speed_set);
 		sprintf(stringD, "Satellites %d   ", DATA.satellites_s);
