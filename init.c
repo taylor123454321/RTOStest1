@@ -251,11 +251,11 @@ void initTimer(void){
 void main_init(void){
     IntMasterDisable();
     reset_peripheral();
-    initClock();
+    initConsole();
     initPin();
+    initClock();
     initTimer();
     initGPIO();
-    initConsole();
     initPWMchan();
     initADC();
     initDisplay();                  // intialise the OLED display
